@@ -1,0 +1,11 @@
+IO_LOC "clk_i" 52;
+IO_LOC "led_o[0]" 10;
+IO_LOC "led_o[1]" 11;
+IO_LOC "led_o[2]" 13;
+IO_LOC "led_o[3]" 14;
+IO_LOC "led_o[4]" 15;
+IO_LOC "led_o[5]" 16;
+IO_LOC "key" 3;
+IO_LOC "rstn_i" 4;
+
+

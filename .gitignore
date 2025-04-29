@@ -1,0 +1,6 @@
+obj_dir
+bitstream.fs
+out.svg
+pnr.json
+synth.json
+trace.vcd
