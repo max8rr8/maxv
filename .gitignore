@@ -4,3 +4,6 @@ out.svg
 pnr.json
 synth.json
 trace.vcd
+code.out
+code.hex
+code.sv

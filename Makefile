@@ -2,6 +2,12 @@
 
 SOURCES := top.sv led.sv cpu.sv code.sv
 
+code.out: code.s
+	riscv32-elf-as ./code.s -o code.out
+
+code.sv code.hex: code.out
+	python3 ./gen_rom_code.py ./code.out
+
 synth.json: $(SOURCES)
 	yowasp-yosys -p "read_verilog -sv $(SOURCES); synth_gowin -top top -json synth.json"
 
