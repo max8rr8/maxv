@@ -1,6 +1,6 @@
 .PHONY: load sim
 
-SOURCES := top.sv led.sv cpu.sv code.sv
+SOURCES := top.sv led.sv cpu.sv code.sv uart.sv
 
 code.out: code.s
 	riscv32-elf-as ./code.s -o code.out

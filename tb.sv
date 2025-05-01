@@ -3,6 +3,7 @@
 module tb ();
   logic clk;
   logic rstn;
+  logic uart;
 
   initial begin
       $display("123");
@@ -26,10 +27,11 @@ module tb ();
 
   logic [5:0] leds;
 
-  top #(.FREQ(10)) top (
+  top #(.FREQ(115200)) top (
     .clk_i(clk),
     .rstn_i(rstn),
-    .led_o(leds)
+    .led_o(leds),
+    .uart_tx_o(uart)
   );
 
 endmodule
