@@ -17,6 +17,11 @@ with open(sys.argv[1], "rb") as f:
 print(f"Total: {len(code_commands)} instruction")
 code_bits = len(code_commands) * 32
 
+TEREN_GEN = ""
+for i, cmd in enumerate(code_commands):
+  TEREN_GEN += f"addr_i == 32'd{i * 4} ? 32'h{cmd} : \n"
+TEREN_GEN += "32'h13"
+print(TEREN_GEN)
 CODE = f"""
 `default_nettype none
 
@@ -25,9 +30,9 @@ module code (
     output [31:0] instr_o
 );
   // verilator lint_off ASCRANGE
-  logic [0:{len(code_commands) - 1}][31:0] INSTR  = {code_bits}'h{''.join(code_commands)};
+  // logic [0:{len(code_commands) - 1}][31:0] INSTR  = {code_bits}'h{''.join(code_commands)};
 
-  assign instr_o = addr_i < {len(code_commands) * 4} ? INSTR[addr_i >> 2] : 32'h00000013;
+  assign instr_o = {TEREN_GEN};
 endmodule
 """
 
