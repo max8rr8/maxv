@@ -32,7 +32,7 @@ module top #(parameter FREQ = 27000000) (
 
   logic uart_tx_loc;
 
-  uart  uart (
+  uart #(.FREQ(FREQ)) uart (
      .clk_i(clk_i),
      .rstn_i(rstn_i),
      .uart_tx_o(uart_tx_loc),

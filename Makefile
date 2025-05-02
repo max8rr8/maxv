@@ -1,27 +1,37 @@
 .PHONY: load sim
 
-SOURCES := top.sv led.sv cpu.sv code.sv uart.sv
+B ?= build
+SRC := src/top.sv src/led.sv src/cpu.sv src/uart.sv
+SIM := sim/tb.sv
+PROG := prog/code.s
+PROG_GEN := prog/gen_rom_code.py
 
-code.out: code.s
-	riscv32-elf-as ./code.s -o code.out
+B_CODE_SV := $(B)/code.sv
 
-code.sv code.hex: code.out
-	python3 ./gen_rom_code.py ./code.out
+$(shell mkdir -p $(B))
 
-synth.json: $(SOURCES)
-	yowasp-yosys -p "read_verilog -sv $(SOURCES); synth_gowin -top top -json synth.json"
+$(B)/code.out: $(PROG)
+	riscv32-elf-as $(PROG) -o $@
 
-out.svg pnr.json: synth.json tangnano9k.cst
-	nextpnr-himbaechel --json synth.json --write pnr.json --device GW1NR-LV9QN88PC6/I5 --vopt family=GW1N-9C --vopt cst=tangnano9k.cst --routed-svg out.svg
+$(B_CODE_SV) $(B)/code.hex: $(B)/code.out $(PROG_GEN)
+	python3 $(PROG_GEN) $(B)/code.out $(B)/
 
-bitstream.fs: pnr.json
-	gowin_pack -d GW1N-9C -o bitstream.fs pnr.json
+$(B)/synth.json: $(SRC) $(B_CODE_SV)
+	yowasp-yosys -p "read_verilog -sv $(SRC) $(B_CODE_SV); synth_gowin -top top -json $(B)/synth.json"
 
-load: bitstream.fs
-	openFPGALoader -b tangnano9k bitstream.fs
+$(B)/pnr.json: $(B)/synth.json tangnano9k.cst
+	nextpnr-himbaechel --json $(B)/synth.json --write $(B)/pnr.json \
+		--device GW1NR-LV9QN88PC6/I5 --vopt family=GW1N-9C \
+		--vopt cst=tangnano9k.cst
 
-obj_dir/Vtb: $(SOURCES) tb.sv
-	verilator --exe --binary tb.sv $(SOURCES) --top-module tb -Wno-pinmissing --trace
+$(B)/bitstream.fs: $(B)/pnr.json
+	gowin_pack -d GW1N-9C -o $(B)/bitstream.fs $(B)/pnr.json
+
+load: $(B)/bitstream.fs
+	openFPGALoader -b tangnano9k $(B)/bitstream.fs
+
+obj_dir/Vtb: $(SRC) $(SIM) $(B_CODE_SV)
+	verilator --exe --binary $(SIM) $(SRC) $(B_CODE_SV) --top-module tb -Wno-pinmissing --trace
 
 trace.vcd: obj_dir/Vtb
 	./obj_dir/Vtb

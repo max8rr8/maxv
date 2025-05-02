@@ -10,7 +10,7 @@ module uart #(parameter FREQ = 27000000) (
 );
     localparam RESET_CNT = FREQ / 115200;
 
-    logic [23:0] cnt;
+    logic [24:0] cnt;
     logic [10:0] out_shift;
 
     initial begin

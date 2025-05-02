@@ -6,7 +6,7 @@ module tb ();
   logic uart;
 
   initial begin
-      $display("123");
+    $display("123");
     $dumpfile("./trace.vcd");
     clk = 0;
     

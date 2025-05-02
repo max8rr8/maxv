@@ -36,8 +36,8 @@ module code (
 endmodule
 """
 
-with open("code.sv", "w") as f:
+with open(sys.argv[2] + "/code.sv", "w") as f:
    f.write(CODE)
 
-with open("code.hex", "w") as f:
+with open(sys.argv[2] + "/code.hex", "w") as f:
    f.write("\n".join(code_commands))
