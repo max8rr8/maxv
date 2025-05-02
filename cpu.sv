@@ -28,6 +28,7 @@ module cpu (
   wire ins_is_sb = cur_ins[6:0] == 7'b0100011 & cur_ins[14:12] == 3'b000;
   wire ins_is_jal = cur_ins[6:0] == 7'b1101111;
   wire ins_is_srli = cur_ins[6:0] == 7'b0010011 & cur_ins[14:12] == 3'b101 & cur_ins[31:25] == 7'b0;
+  wire ins_is_bne = cur_ins[6:0] == 7'b1100011 & cur_ins[14:12] == 3'b001;
 
   wire ins_will_write = ins_is_lui | ins_is_addi | ins_is_jal | ins_is_srli;
 
@@ -35,6 +36,7 @@ module cpu (
   wire [4:0] ins_rs1 = cur_ins[19:15];
   wire [4:0] ins_rs2 = cur_ins[24:20];
   wire [31:0] ins_j_imm = {{12{cur_ins[31]}}, cur_ins[19:12], cur_ins[20], cur_ins[30:21], 1'd0};
+  wire [31:0] ins_b_imm = {{20{cur_ins[31]}}, cur_ins[7], cur_ins[30:25], cur_ins[11:8], 1'd0};
 
   logic [31:0] cur_src_a;
   logic [31:0] cur_src_b;
@@ -67,13 +69,8 @@ module cpu (
 
         DECODE: begin
           cpu_state <= EXECUTE;
-          if(ins_is_addi | ins_is_sb | ins_is_srli) begin
-            cur_src_a <= ins_rs1 == 0 ? 0 : regs[ins_rs1];
-          end
-
-          if(ins_is_sb) begin
-            cur_src_b <= ins_rs2 == 0 ? 0 : regs[ins_rs2];
-          end
+          cur_src_a <= ins_rs1 == 0 ? 0 : regs[ins_rs1];
+          cur_src_b <= ins_rs2 == 0 ? 0 : regs[ins_rs2];
         end
 
         EXECUTE: begin
@@ -87,7 +84,7 @@ module cpu (
           end else if(ins_is_jal) begin
             cur_res <= reg_pc + 4;
           end else if(ins_is_srli) begin
-            cur_res <= cur_src_a >> cur_ins[24:20];
+            // cur_res <= cur_src_a >> cur_ins[24:20];
           end
         end
 
@@ -106,6 +103,10 @@ module cpu (
 
           if(ins_is_jal) begin
             reg_pc <= reg_pc + ins_j_imm;
+          end
+
+          if(ins_is_bne && cur_src_a != cur_src_b) begin
+            reg_pc <= reg_pc + ins_b_imm;
           end
         end
       endcase
