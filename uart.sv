@@ -6,33 +6,34 @@ module uart #(parameter FREQ = 27000000) (
     input write_i,
     input [7:0] val_i,
 
-    output uart_tx_o
+    output logic uart_tx_o
 );
     localparam RESET_CNT = FREQ / 115200;
 
     logic [23:0] cnt;
-    logic [9:0] out_shift;
+    logic [10:0] out_shift;
 
     initial begin
-      out_shift = {10{1'b1}};
+      out_shift = {11{1'b1}};
     end
 
     always_ff @(posedge clk_i) begin
         if(~rstn_i) begin
-            cnt <= RESET_CNT;
-            out_shift <= {10{1'b1}};
-        end else begin
-            if(write_i) begin
-              out_shift <= {1'b0, val_i, 1'b1};
-              cnt <= RESET_CNT;
-            end else if(cnt == 0) begin
-              out_shift <= {out_shift[8:0], 1'b1};
-              cnt <= RESET_CNT;
+            cnt <= 0;
+            out_shift <= {11{1'b1}};
+            uart_tx_o <= 1;
+        end else begin            
+            if(cnt == RESET_CNT - 1) begin
+              out_shift <= {1'b1, out_shift[10:1]};
+              cnt <= 0;
             end else begin
-              cnt <= cnt - 1;
+              cnt <= cnt + 1;
             end;
-        end;
-    end
 
-    assign uart_tx_o = out_shift[9];
+            if(write_i) begin
+              out_shift <= {1'b1, val_i, 2'b01};
+            end 
+        end;
+        uart_tx_o <= out_shift[0];
+    end
 endmodule

@@ -4,7 +4,8 @@ module top #(parameter FREQ = 27000000) (
     input clk_i,
     input rstn_i,
     output reg [5:0] led_o,
-    output uart_tx_o
+    output uart_tx_o,
+    input uart_rx_i
 );
   // logic led_write;
   // logic [5:0] led_val;
@@ -29,13 +30,15 @@ module top #(parameter FREQ = 27000000) (
     .value_o(bus_value)
   );
 
-  uart #(.FREQ(FREQ)) uart (
+  logic uart_tx_loc;
+
+  uart  uart (
      .clk_i(clk_i),
      .rstn_i(rstn_i),
-     .uart_tx_o(uart_tx_o),
+     .uart_tx_o(uart_tx_loc),
     
      .write_i(bus_write),
      .val_i(bus_value[7:0])
   );
-
+  assign uart_tx_o = rstn_i ? uart_tx_loc : uart_rx_i;
 endmodule

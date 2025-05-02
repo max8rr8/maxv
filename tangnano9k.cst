@@ -8,5 +8,6 @@ IO_LOC "led_o[3]" 14;
 IO_LOC "led_o[4]" 15;
 IO_LOC "led_o[5]" 16;
 IO_LOC "uart_tx_o" 17;
+IO_LOC "uart_rx_i" 18;
 IO_LOC "key" 3;
 
