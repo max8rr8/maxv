@@ -8,6 +8,7 @@ module cpu (
     output logic [31:0] value_o
 );
   typedef enum { 
+    ST_FE,
     FETCH,
     DECODE,
     EXECUTE,
@@ -44,6 +45,7 @@ module cpu (
 
 
   code code(
+    .clk_i(clk_i),
     .addr_i(reg_pc),
     .instr_o(code_out)
   );
@@ -62,6 +64,9 @@ module cpu (
       cur_res <= 0;
     end else begin
       case (cpu_state)
+        ST_FE: begin 
+          cpu_state <= FETCH;
+        end
         FETCH: begin 
           cur_ins <= code_out;
           cpu_state <= DECODE;
@@ -90,7 +95,7 @@ module cpu (
 
         WRITEBACK: begin
           reg_pc <= reg_pc + 4;
-          cpu_state <= FETCH;
+          cpu_state <= ST_FE;
 
           if(ins_will_write && ins_rd != 0) begin
             regs[ins_rd] <= cur_res;
