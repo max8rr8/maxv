@@ -3,7 +3,7 @@
 B ?= build
 SRC := src/top.sv src/led.sv src/cpu.sv src/uart.sv
 SIM := sim/tb.sv sim/prom.sv
-PROG := prog/code.s
+PROG := prog/code.S prog/code.c
 PROG_GEN := prog/gen_code.py
 # PROG_SIM_GEN := prog/gen_sim_code.py
 
@@ -12,7 +12,7 @@ B_CODE_SV := $(B)/code.sv
 $(shell mkdir -p $(B))
 
 $(B)/code.out: $(PROG)
-	riscv32-elf-as $(PROG) -o $@
+	clang -O2 -target riscv32 -march=rv32i -nostdlib $(PROG) -o $@
 
 $(B)/synth.json: $(SRC) prog/code_base.sv
 	yowasp-yosys -p "read_verilog -sv $(SRC) prog/code_base.sv; synth_gowin -top top -json $(B)/synth.json"
