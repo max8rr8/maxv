@@ -2,7 +2,7 @@
 
 volatile uint8_t *const wr = (volatile uint8_t *)0x1234;
 
-void print_char(char c) {
+static void print_char(char c) {
   *wr = c;
   int i = 0x2000;
 
@@ -13,7 +13,7 @@ void print_char(char c) {
   }
 }
 
-void print_string(const char *str) {
+static void print_string(const char *str) {
   while (*str != 0) {
     print_char(*str);
     str++;
@@ -21,9 +21,10 @@ void print_string(const char *str) {
 }
 
 int main() {
-  print_string("Hi!");
+  print_string("Hi!\n\r");
   while (1) {
     asm volatile("addi x0, x0, 0");
   }
   return 0;
 }
+
