@@ -10,8 +10,23 @@ module top #(parameter FREQ = 27000000) (
   // logic led_write;
   // logic [5:0] led_val;
 
-  logic bus_write;
-  logic [31:0] bus_value;
+  wire bus_enable;
+  wire [3:0] bus_wstrb;
+  wire [31:0] bus_wvalue;
+  wire [31:0] bus_addr;
+  logic [31:0] bus_prev_addr;
+
+  wire [31:0] instr_rvalue;
+  wire [31:0] bsmem_rvalue;
+  wire [31:0] bus_rvalue = bus_prev_addr[31:29] == 3'b001 ? bsmem_rvalue : instr_rvalue;
+
+  always_ff @(posedge clk_i or negedge rstn_i) begin
+    if (!rstn_i) begin
+      bus_prev_addr <= 0;
+    end else begin
+      bus_prev_addr <= bus_addr;
+    end
+  end
 
   // led led(
   //   .clk_i(clk_i),
@@ -26,8 +41,27 @@ module top #(parameter FREQ = 27000000) (
     .clk_i(clk_i),
     .rstn_i(rstn_i),
 
-    .write_o(bus_write),
-    .value_o(bus_value)
+    .enable_o(bus_enable),
+    .wstrb_o(bus_wstrb),
+    .addr_o(bus_addr),
+    .wvalue_o(bus_wvalue),
+    .rvalue_i(bus_rvalue)
+  );
+
+  code code(
+    .clk_i(clk_i),
+    .addr_i(bus_addr),
+    .instr_o(instr_rvalue)
+  );
+
+  bsmem bsmem(
+    .clk_i(clk_i),
+    .enable_i(bus_enable && bus_addr[31:29] == 3'b001),
+    .wstrb_i(bus_wstrb),
+    .addr_i(bus_addr),
+    .addr_prev_i(bus_prev_addr),
+    .wvalue_i(bus_wvalue),
+    .rvalue_o(bsmem_rvalue)
   );
 
   logic uart_tx_loc;
@@ -37,8 +71,8 @@ module top #(parameter FREQ = 27000000) (
      .rstn_i(rstn_i),
      .uart_tx_o(uart_tx_loc),
     
-     .write_i(bus_write),
-     .val_i(bus_value[7:0])
+     .write_i(bus_enable && bus_addr == 32'h1234),
+     .val_i(bus_wvalue[7:0])
   );
   assign uart_tx_o = rstn_i ? uart_tx_loc : uart_rx_i;
 endmodule

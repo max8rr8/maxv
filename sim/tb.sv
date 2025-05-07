@@ -21,7 +21,7 @@ module tb ();
     rstn = 0;
     #40ns;
     rstn = 1;
-    #10000ns;
+    #1000000ns;
     $finish();
   end
 

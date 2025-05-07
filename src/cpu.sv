@@ -4,8 +4,11 @@ module cpu (
     input clk_i,
     input rstn_i,
  
-    output logic write_o,
-    output logic [31:0] value_o
+    output logic enable_o,
+    output logic [3:0] wstrb_o,
+    output logic [31:0] addr_o,
+    output logic [31:0] wvalue_o,
+    input logic [31:0] rvalue_i
 );
   typedef enum { 
     ST_FE,
@@ -26,7 +29,8 @@ module cpu (
 
   wire ins_is_lui = cur_ins[6:0] == 7'b0110111;
   wire ins_is_addi = cur_ins[6:0] == 7'b0010011 & cur_ins[14:12] == 3'b000;
-  wire ins_is_sb = cur_ins[6:0] == 7'b0100011 & cur_ins[14:12] == 3'b000;
+  wire ins_is_store = cur_ins[6:0] == 7'b0100011;
+  wire ins_is_load = cur_ins[6:0] == 7'b0000011;
   wire ins_is_jal = cur_ins[6:0] == 7'b1101111;
   wire ins_is_srli = cur_ins[6:0] == 7'b0010011 & cur_ins[14:12] == 3'b101 & cur_ins[31:25] == 7'b0;
   wire ins_is_bne = cur_ins[6:0] == 7'b1100011 & cur_ins[14:12] == 3'b001;
@@ -36,26 +40,19 @@ module cpu (
   wire [4:0] ins_rd = cur_ins[11:7];
   wire [4:0] ins_rs1 = cur_ins[19:15];
   wire [4:0] ins_rs2 = cur_ins[24:20];
+  wire [31:0] ins_i_imm = {{20{cur_ins[31]}}, cur_ins[31:20]};
   wire [31:0] ins_j_imm = {{12{cur_ins[31]}}, cur_ins[19:12], cur_ins[20], cur_ins[30:21], 1'd0};
   wire [31:0] ins_b_imm = {{20{cur_ins[31]}}, cur_ins[7], cur_ins[30:25], cur_ins[11:8], 1'd0};
+  wire [31:0] ins_s_imm = {{21{cur_ins[31]}}, cur_ins[30:25], cur_ins[11:7]};
 
   logic [31:0] cur_src_a;
   logic [31:0] cur_src_b;
   logic [31:0] cur_res;
 
-
-  code code(
-    .clk_i(clk_i),
-    .addr_i(reg_pc),
-    .instr_o(code_out)
-  );
-
   always_ff @(posedge clk_i) begin
-    write_o <= 0;
-
     if(~rstn_i) begin
       reg_pc <= 0;
-      cpu_state <= FETCH;
+      cpu_state <= ST_FE;
       for(int i = 0; i < 31; i++) begin
         regs[i] <= 0;
       end
@@ -68,7 +65,7 @@ module cpu (
           cpu_state <= FETCH;
         end
         FETCH: begin 
-          cur_ins <= code_out;
+          cur_ins <= rvalue_i;
           cpu_state <= DECODE;
         end
 
@@ -83,9 +80,7 @@ module cpu (
           if(ins_is_lui) begin
             cur_res <= { cur_ins[31:12], 12'd0 };
           end else if(ins_is_addi) begin
-            cur_res <= cur_src_a + {{20{cur_ins[31]}}, cur_ins[31:20]};
-          end else if(ins_is_sb) begin
-            cur_res <= { 24'd0, cur_src_b[7:0] };
+            cur_res <= cur_src_a + ins_i_imm;
           end else if(ins_is_jal) begin
             cur_res <= reg_pc + 4;
           end else if(ins_is_srli) begin
@@ -99,11 +94,17 @@ module cpu (
 
           if(ins_will_write && ins_rd != 0) begin
             regs[ins_rd] <= cur_res;
-          end
+          end else if(ins_is_load) begin
+            case (cur_ins[14:12])
+              3'b000: regs[ins_rd] <= {{24{rvalue_i[7]}}, rvalue_i[7:0]}; // lb
+              3'b100: regs[ins_rd] <= {{24{1'b0}}, rvalue_i[7:0]}; // lbu
 
-          if(ins_is_sb) begin
-            value_o <= cur_res;
-            write_o <= 1;
+              3'b001: regs[ins_rd] <= {{16{rvalue_i[15]}}, rvalue_i[15:0]}; // lh
+              3'b101: regs[ins_rd] <= {{16{1'b0}}, rvalue_i[15:0]}; // lhu
+
+              3'b010: regs[ins_rd] <= rvalue_i; // lw
+              default: assert(0);
+            endcase
           end
 
           if(ins_is_jal) begin
@@ -117,4 +118,39 @@ module cpu (
       endcase
     end
   end
+
+  always_comb begin
+    enable_o = 0;
+    addr_o = 0;
+    wstrb_o = 0;
+
+    case (cpu_state)
+      ST_FE: begin 
+        enable_o = 1;
+        addr_o = reg_pc;
+      end
+      
+      EXECUTE: begin
+        if(ins_is_load) begin
+          addr_o = cur_src_a + ins_i_imm;
+          enable_o = 1;
+        end
+      end
+
+      WRITEBACK: begin
+        if(ins_is_store) begin
+          case(cur_ins[14:12])
+            3'b000: wstrb_o = 4'b0001;
+            3'b001: wstrb_o = 4'b0011;
+            3'b010: wstrb_o = 4'b1111;
+            default: assert (0);
+          endcase
+          addr_o = cur_src_a + ins_s_imm;
+          enable_o = 1;
+        end
+      end
+    endcase
+  end
+
+  assign wvalue_o = cur_src_b;
 endmodule

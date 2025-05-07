@@ -68,11 +68,20 @@ if args.pnr:
 
     pnr_full = []
     is_hi = False
+    do_rep = False
     for l in pnr_raw:
         if "prom_inst_hi" in l:
             is_hi = True
+            do_rep = True
         if "prom_inst_lo" in l:
             is_hi = False
+            do_rep = True
+        if '"type": "SP"' in l:
+            do_rep = False
+
+        if not do_rep:
+            pnr_full.append(l)
+            continue
 
         for k, v in fills.items():
             if k in l:
