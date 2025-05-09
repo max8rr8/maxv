@@ -35,7 +35,7 @@ module cpu (
   wire ins_is_jal = cur_ins[6:0] == 7'b1101111;
   wire ins_is_jalr = cur_ins[6:0] == 7'b1100111;
   wire ins_is_srli = cur_ins[6:0] == 7'b0010011 & cur_ins[14:12] == 3'b101 & cur_ins[31:25] == 7'b0;
-  wire ins_is_bne = cur_ins[6:0] == 7'b1100011 & cur_ins[14:12] == 3'b001;
+  wire ins_is_branch = cur_ins[6:0] == 7'b1100011;
 
   wire ins_will_write = ins_is_lui | ins_is_auipc | ins_is_addi | ins_is_jal | ins_is_jalr | ins_is_srli;
 
@@ -50,6 +50,19 @@ module cpu (
   logic [31:0] cur_src_a;
   logic [31:0] cur_src_b;
   logic [31:0] cur_res;
+
+  wire alu_compare_eq_o;
+  wire alu_compare_lt_o;
+
+  cpu_alu alu (
+    .src_a_i(cur_src_a),
+    .src_b_i(cur_src_b),
+    .compare_unsigned_i(ins_is_branch ? cur_ins[13] : cur_ins[12]),
+    .compare_eq_o(alu_compare_eq_o),
+    .compare_lt_o(alu_compare_lt_o)
+  );
+
+  wire should_branch = cur_ins[12] ^ (cur_ins[14] ? alu_compare_lt_o : alu_compare_eq_o);
 
   always_ff @(posedge clk_i) begin
     if(~rstn_i) begin
@@ -115,7 +128,7 @@ module cpu (
             reg_pc <= reg_pc + ins_j_imm;
           end else if(ins_is_jalr) begin
             reg_pc <= cur_src_a + ins_i_imm;
-          end else if(ins_is_bne && cur_src_a != cur_src_b) begin
+          end else if(ins_is_branch && should_branch) begin
             reg_pc <= reg_pc + ins_b_imm;
           end
         end

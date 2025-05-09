@@ -4,7 +4,7 @@ PROG ?= dev
 
 B ?= build
 CODE_OUT := $(B)/code_$(PROG).out
-SRC := src/top.sv src/led.sv src/cpu/cpu.sv src/uart.sv src/bsmem.sv
+SRC := src/top.sv src/led.sv src/cpu/cpu.sv src/cpu/alu.sv src/uart.sv src/bsmem.sv
 SIM := sim/tb.sv sim/prom.sv
 PROG_GEN := prog/gen_code.py
 # PROG_SIM_GEN := prog/gen_sim_code.py
