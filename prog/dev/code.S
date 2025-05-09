@@ -22,26 +22,31 @@ _boot:
   li t0, 0x00
   sb t0, 7(gp)
   
-  li a0, 0x1234
 
 loop:
-  lb t0, 0(gp)
+  lb a0, 0(gp)
   addi gp, gp, 1
-  bne t0, x0, cont
+  bne a0, x0, cont
   j stuck
 
 cont:
-  sb t0, 0(a0)
-
-  li t1, 0x2000
-wait:
-  addi t1, t1, -1
-  bne t1, x0, wait
-
+  call print_char
   j loop
 
 stuck:
   j stuck
+
+
+# ======================
+print_char:
+  li t0, 0x1234
+  sb a0, 0(t0)
+
+  li t1, 0x2000
+print_char_wait:
+  addi t1, t1, -1
+  bne t1, x0, print_char_wait
+  ret
 
 .data
 variable:

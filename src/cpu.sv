@@ -28,14 +28,16 @@ module cpu (
   logic [31:0] cur_ins;
 
   wire ins_is_lui = cur_ins[6:0] == 7'b0110111;
+  wire ins_is_auipc = cur_ins[6:0] == 7'b0010111;
   wire ins_is_addi = cur_ins[6:0] == 7'b0010011 & cur_ins[14:12] == 3'b000;
   wire ins_is_store = cur_ins[6:0] == 7'b0100011;
   wire ins_is_load = cur_ins[6:0] == 7'b0000011;
   wire ins_is_jal = cur_ins[6:0] == 7'b1101111;
+  wire ins_is_jalr = cur_ins[6:0] == 7'b1100111;
   wire ins_is_srli = cur_ins[6:0] == 7'b0010011 & cur_ins[14:12] == 3'b101 & cur_ins[31:25] == 7'b0;
   wire ins_is_bne = cur_ins[6:0] == 7'b1100011 & cur_ins[14:12] == 3'b001;
 
-  wire ins_will_write = ins_is_lui | ins_is_addi | ins_is_jal | ins_is_srli;
+  wire ins_will_write = ins_is_lui | ins_is_auipc | ins_is_addi | ins_is_jal | ins_is_jalr | ins_is_srli;
 
   wire [4:0] ins_rd = cur_ins[11:7];
   wire [4:0] ins_rs1 = cur_ins[19:15];
@@ -79,9 +81,11 @@ module cpu (
           cpu_state <= WRITEBACK;
           if(ins_is_lui) begin
             cur_res <= { cur_ins[31:12], 12'd0 };
+          end else if(ins_is_auipc) begin
+            cur_res <= reg_pc + { cur_ins[31:12], 12'd0 };
           end else if(ins_is_addi) begin
             cur_res <= cur_src_a + ins_i_imm;
-          end else if(ins_is_jal) begin
+          end else if(ins_is_jal | ins_is_jalr) begin
             cur_res <= reg_pc + 4;
           end else if(ins_is_srli) begin
             // cur_res <= cur_src_a >> cur_ins[24:20];
@@ -109,9 +113,9 @@ module cpu (
 
           if(ins_is_jal) begin
             reg_pc <= reg_pc + ins_j_imm;
-          end
-
-          if(ins_is_bne && cur_src_a != cur_src_b) begin
+          end else if(ins_is_jalr) begin
+            reg_pc <= cur_src_a + ins_i_imm;
+          end else if(ins_is_bne && cur_src_a != cur_src_b) begin
             reg_pc <= reg_pc + ins_b_imm;
           end
         end
