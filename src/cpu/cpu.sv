@@ -19,6 +19,7 @@ module cpu (
   } CPU_STATE;
 
   CPU_STATE cpu_state;
+  logic start_exec;
 
   logic [31:0] reg_pc;
   logic [31:0] code_out;
@@ -31,6 +32,7 @@ module cpu (
   wire ins_is_auipc = cur_ins[6:0] == 7'b0010111;
   wire ins_is_alui = cur_ins[6:0] == 7'b0010011;
   wire ins_is_alu = cur_ins[6:0] == 7'b0110011;
+  wire ins_is_shifti = ins_is_alui & cur_ins[13:12] == 2'b01;
   wire ins_is_store = cur_ins[6:0] == 7'b0100011;
   wire ins_is_load = cur_ins[6:0] == 7'b0000011;
   wire ins_is_jal = cur_ins[6:0] == 7'b1101111;
@@ -71,9 +73,29 @@ module cpu (
     .compare_lt_o(alu_compare_lt_o)
   );
 
+  wire [31:0] shifter_res_o;
+  wire shifter_done_o;
+
+  cpu_shifter shifter (
+    .clk_i(clk_i),
+    .src_a_i(cur_src_a),
+    .src_b_i(cur_src_b),
+    .src_imm(ins_i_imm),
+    .use_imm_i(ins_is_shifti),
+    
+    .right_i(cur_ins[14]),
+    .signed_i(cur_ins[30]),
+
+    .start_i(start_exec & ins_is_shifti),
+    .done_o(shifter_done_o),
+    .res_o(shifter_res_o)
+  );
+
   wire should_branch = cur_ins[12] ^ (cur_ins[14] ? alu_compare_lt_o : alu_compare_eq_o);
 
   always_ff @(posedge clk_i) begin
+    start_exec <= 0;
+
     if(~rstn_i) begin
       reg_pc <= 0;
       cpu_state <= ST_FE;
@@ -94,23 +116,30 @@ module cpu (
         end
 
         DECODE: begin
-          cpu_state <= EXECUTE;
           cur_src_a <= ins_rs1 == 0 ? 0 : regs[ins_rs1];
           cur_src_b <= ins_rs2 == 0 ? 0 : regs[ins_rs2];
+          
+          cpu_state <= EXECUTE;
+          start_exec <= 1;
         end
 
         EXECUTE: begin
           cpu_state <= WRITEBACK;
+
           if(ins_is_lui) begin
             cur_res <= { cur_ins[31:12], 12'd0 };
           end else if(ins_is_auipc) begin
             cur_res <= reg_pc + { cur_ins[31:12], 12'd0 };
+          end else if(ins_is_shifti) begin
+            $display("Shifter %d!", shifter_done_o, cpu_state, ins_is_shifti);
+            cur_res <= shifter_res_o;
+            if(shifter_done_o == 1'b0) begin
+              cpu_state <= EXECUTE;
+            end
           end else if(ins_is_alui | ins_is_alu) begin
             cur_res <= alu_res_o;
           end else if(ins_is_jal | ins_is_jalr) begin
             cur_res <= reg_pc + 4;
-          end else if(ins_is_srli) begin
-            cur_res <= cur_src_a >> 4;
           end
         end
 

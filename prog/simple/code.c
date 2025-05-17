@@ -38,6 +38,15 @@ static void print_hex_digit(int d) {
     print_char(d + 'a' - 10);
 }
 
+static void print_hex(int v) {
+  for(int i = 0; i < 8; i++) {
+    print_hex_digit((v >> 28) & 0xF);
+    v <<= 4;
+  }
+  print_char(' ');
+  print_char(' ');
+}
+
 static void print_cells() {
   for (int i = 0; i < CELL_COUNT; i++) {
     print_char(cells[i] ? '#' : ' ');
@@ -76,8 +85,18 @@ int main() {
   cells[6] = 1;
   cells[7] = 1;
   
+  print_char('\n');
+  print_char('\r');
+  print_char('\n');
+  print_char('\r');
+  print_hex(*get_self());
+  print_char('\n');
+  print_char('\r');
   
+  int i = 0;
   while(1) {
+    print_hex(i++);
+
     print_cells();
     print_char('\n');
     print_char('\r');

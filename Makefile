@@ -5,7 +5,8 @@ PROG ?= dev
 B ?= build
 B_CONF := $(B)/conf/
 CODE_OUT := $(B)/code_$(PROG).out
-SRC := src/top.sv src/led.sv src/cpu/cpu.sv src/cpu/alu.sv src/uart.sv src/bsmem.sv
+SRC := src/top.sv src/led.sv src/uart.sv src/bsmem.sv
+SRC += src/cpu/cpu.sv src/cpu/alu.sv src/cpu/shifter.sv
 SIM := sim/tb.sv sim/prom.sv
 PROG_GEN := prog/gen_code.py
 
@@ -47,7 +48,5 @@ $(B)/sim_code.sv $(B)/sim_code.hex: $(PROG_GEN) $(CODE_OUT) $(PROG_CONF_F)
 obj_dir/Vtb: $(SRC) $(SIM) $(B)/sim_code.sv
 	verilator --exe --binary $(SIM) $(SRC) $(B)/sim_code.sv --top-module tb -Wno-pinmissing --trace
 
-trace.vcd: obj_dir/Vtb
+trace.vcd sim: obj_dir/Vtb
 	./obj_dir/Vtb
-
-sim: trace.vcd
