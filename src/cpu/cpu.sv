@@ -30,6 +30,7 @@ module cpu (
   wire ins_is_lui = cur_ins[6:0] == 7'b0110111;
   wire ins_is_auipc = cur_ins[6:0] == 7'b0010111;
   wire ins_is_alui = cur_ins[6:0] == 7'b0010011;
+  wire ins_is_alu = cur_ins[6:0] == 7'b0110011;
   wire ins_is_store = cur_ins[6:0] == 7'b0100011;
   wire ins_is_load = cur_ins[6:0] == 7'b0000011;
   wire ins_is_jal = cur_ins[6:0] == 7'b1101111;
@@ -37,7 +38,7 @@ module cpu (
   wire ins_is_srli = cur_ins[6:0] == 7'b0010011 & cur_ins[14:12] == 3'b101;
   wire ins_is_branch = cur_ins[6:0] == 7'b1100011;
 
-  wire ins_will_write = ins_is_lui | ins_is_auipc | ins_is_alui | ins_is_jal | ins_is_jalr | ins_is_srli;
+  wire ins_will_write = ins_is_lui | ins_is_auipc | ins_is_alui | ins_is_alu | ins_is_jal | ins_is_jalr | ins_is_srli;
 
   wire [4:0] ins_rd = cur_ins[11:7];
   wire [4:0] ins_rs1 = cur_ins[19:15];
@@ -62,6 +63,7 @@ module cpu (
 
     .use_imm_i(ins_is_alui),
     .op_i(cur_ins[14:12]),
+    .do_sub_i(ins_is_alu & cur_ins[30]),
     .res_o(alu_res_o),
 
     .compare_unsigned_i(ins_is_branch ? cur_ins[13] : cur_ins[12]),
@@ -103,7 +105,7 @@ module cpu (
             cur_res <= { cur_ins[31:12], 12'd0 };
           end else if(ins_is_auipc) begin
             cur_res <= reg_pc + { cur_ins[31:12], 12'd0 };
-          end else if(ins_is_alui) begin
+          end else if(ins_is_alui | ins_is_alu) begin
             cur_res <= alu_res_o;
           end else if(ins_is_jal | ins_is_jalr) begin
             cur_res <= reg_pc + 4;
