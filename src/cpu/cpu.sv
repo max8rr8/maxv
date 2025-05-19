@@ -33,14 +33,14 @@ module cpu (
   wire ins_is_alui = cur_ins[6:0] == 7'b0010011;
   wire ins_is_alu = cur_ins[6:0] == 7'b0110011;
   wire ins_is_shifti = ins_is_alui & cur_ins[13:12] == 2'b01;
+  wire ins_is_shift = ins_is_alu & cur_ins[13:12] == 2'b01;
   wire ins_is_store = cur_ins[6:0] == 7'b0100011;
   wire ins_is_load = cur_ins[6:0] == 7'b0000011;
   wire ins_is_jal = cur_ins[6:0] == 7'b1101111;
   wire ins_is_jalr = cur_ins[6:0] == 7'b1100111;
-  wire ins_is_srli = cur_ins[6:0] == 7'b0010011 & cur_ins[14:12] == 3'b101;
   wire ins_is_branch = cur_ins[6:0] == 7'b1100011;
 
-  wire ins_will_write = ins_is_lui | ins_is_auipc | ins_is_alui | ins_is_alu | ins_is_jal | ins_is_jalr | ins_is_srli;
+  wire ins_will_write = ins_is_lui | ins_is_auipc | ins_is_alui | ins_is_alu | ins_is_jal | ins_is_jalr | ins_is_shift;
 
   wire [4:0] ins_rd = cur_ins[11:7];
   wire [4:0] ins_rs1 = cur_ins[19:15];
@@ -86,7 +86,7 @@ module cpu (
     .right_i(cur_ins[14]),
     .signed_i(cur_ins[30]),
 
-    .start_i(start_exec & ins_is_shifti),
+    .start_i(start_exec & (ins_is_shifti | ins_is_shift)),
     .done_o(shifter_done_o),
     .res_o(shifter_res_o)
   );
@@ -130,8 +130,7 @@ module cpu (
             cur_res <= { cur_ins[31:12], 12'd0 };
           end else if(ins_is_auipc) begin
             cur_res <= reg_pc + { cur_ins[31:12], 12'd0 };
-          end else if(ins_is_shifti) begin
-            $display("Shifter %d!", shifter_done_o, cpu_state, ins_is_shifti);
+          end else if(ins_is_shifti | ins_is_shift) begin
             cur_res <= shifter_res_o;
             if(shifter_done_o == 1'b0) begin
               cpu_state <= EXECUTE;

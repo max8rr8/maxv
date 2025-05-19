@@ -15,11 +15,9 @@ module cpu_shifter (
   output wire done_o,
   output wire [31:0] res_o
 );
-  wire src_b_over = |src_b_i[31:6];
-  
-  wire[5:0] src_sh = use_imm_i ? {1'b0, src_imm[4:0]} : (src_b_over ? 32 : src_b_i[5:0]);
+  wire[4:0] src_sh = use_imm_i ? src_imm[4:0] : src_b_i[4:0];
 
-  logic[5:0] reg_sh;
+  logic[4:0] reg_sh;
   logic[31:0] reg_res;
 
   always_ff @( posedge clk_i ) begin 
