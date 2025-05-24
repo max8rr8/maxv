@@ -80,6 +80,7 @@ module top #(parameter FREQ = 27000000) (
      .clk_i(clk_i),
      .rstn_i(rstn_i),
      .uart_tx_o(uart_tx_loc),
+     .uart_rx_i(uart_rx_i),
     
      .enable_i(bus_enable && bus_addr[31:29] == 3'b010),
      .wstrb_i(bus_wstrb),

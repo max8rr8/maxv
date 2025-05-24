@@ -15,6 +15,14 @@ test_2:
 
   sb a0, 0(a1)
 
+read_w:
+  lh a2, 4(a1)
+  bgez a2, read_w
+  
+  andi a2, a2, 0xff
+  addi a0, a2, 1
+  sb a0, 0(a1)
+  j read_w
 halt:
   j halt
 

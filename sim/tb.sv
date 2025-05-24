@@ -4,6 +4,7 @@ module tb ();
   logic clk;
   logic rstn;
   logic uart;
+  logic uart_p;
 
   localparam FREQ = 115200 * 4;
 
@@ -33,8 +34,13 @@ module tb ();
     .clk_i(clk),
     .rstn_i(rstn),
     .led_o(leds),
-    .uart_tx_o(uart)
+    .uart_tx_o(uart),
+    .uart_rx_i(uart_p)
   );
+
+  always_ff @(posedge clk) begin
+    uart_p <= !rstn ? 1 : uart;
+  end
 
   sim_uart #(.FREQ(FREQ)) sim_uart (
     .clk_i(clk),
