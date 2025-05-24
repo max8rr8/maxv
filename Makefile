@@ -1,6 +1,7 @@
 .PHONY: load sim
 
 PROG ?= dev
+PROG_CONF ?= 
 
 B ?= build
 B_CONF := $(B)/conf/
@@ -10,13 +11,17 @@ SRC += src/cpu/cpu.sv src/cpu/alu.sv src/cpu/shifter.sv
 SIM := sim/tb.sv sim/prom.sv sim/sim_uart.sv
 PROG_GEN := prog/gen_code.py
 
-PROG_CONF_F := $(B_CONF)/$(PROG).prog.conf
-
 B_CODE_SV := $(B)/code.sv
 
 $(shell mkdir -p $(B))
 $(shell mkdir -p $(B_CONF))
 $(shell mkdir -p $(B)/prog)
+
+ifneq (,$(wildcard prog/$(PROG)/conf.mk))
+	include prog/$(PROG)/conf.mk
+endif
+
+PROG_CONF_F := $(B_CONF)/$(PROG)__$(PROG_CONF).prog.conf
 
 $(PROG_CONF_F):
 	rm -f $(B_CONF)/*.prog.conf
