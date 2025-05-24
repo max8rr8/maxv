@@ -5,6 +5,8 @@ module tb ();
   logic rstn;
   logic uart;
 
+  localparam FREQ = 115200 * 4;
+
   initial begin
     $display("123");
     $dumpfile("./trace.vcd");
@@ -27,11 +29,17 @@ module tb ();
 
   logic [5:0] leds;
 
-  top #(.FREQ(115200)) top (
+  top #(.FREQ(FREQ)) top (
     .clk_i(clk),
     .rstn_i(rstn),
     .led_o(leds),
     .uart_tx_o(uart)
+  );
+
+  sim_uart #(.FREQ(FREQ)) sim_uart (
+    .clk_i(clk),
+    .rstn_i(rstn),
+    .uart_tx_i(uart)
   );
 
 endmodule

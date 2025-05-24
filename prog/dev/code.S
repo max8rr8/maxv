@@ -8,14 +8,16 @@
 .text
 
 _boot:
-  li t0, 0xD
-  slli t0, t0, 5
-  srli t0, t0, 5
-
-  slli t0, t0, 31
-  srai t0, t0, 29
-
   
+test_2:
+  li a1, 0x40000000
+  li a0, 65
+
+  sb a0, 0(a1)
+
+halt:
+  j halt
+
 .data
 variable:
  .word 0xdeadbeef

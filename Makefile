@@ -7,7 +7,7 @@ B_CONF := $(B)/conf/
 CODE_OUT := $(B)/code_$(PROG).out
 SRC := src/top.sv src/led.sv src/uart.sv src/bsmem.sv
 SRC += src/cpu/cpu.sv src/cpu/alu.sv src/cpu/shifter.sv
-SIM := sim/tb.sv sim/prom.sv
+SIM := sim/tb.sv sim/prom.sv sim/sim_uart.sv
 PROG_GEN := prog/gen_code.py
 
 PROG_CONF_F := $(B_CONF)/$(PROG).prog.conf

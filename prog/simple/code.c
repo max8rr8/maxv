@@ -1,7 +1,7 @@
 #include <stdint.h>
 #define RAM 0x20000000
 
-static volatile uint8_t *const wr = (volatile uint8_t *)0x1234;
+static volatile uint8_t *const wr = (volatile uint8_t *)0x40000000;
 
 #define CELL_COUNT_LOG2 5
 #define CELL_COUNT (1 << CELL_COUNT_LOG2)
@@ -50,7 +50,7 @@ static void print_hex(int v) {
 static void print_cells() {
   for (int i = 0; i < CELL_COUNT; i++) {
     print_char(cells[i] ? '#' : ' ');
-    print_char(' ');
+    // print_char(' ');
   }
 }
 

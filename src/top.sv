@@ -18,7 +18,17 @@ module top #(parameter FREQ = 27000000) (
 
   wire [31:0] instr_rvalue;
   wire [31:0] bsmem_rvalue;
-  wire [31:0] bus_rvalue = bus_prev_addr[31:29] == 3'b001 ? bsmem_rvalue : instr_rvalue;
+  wire [31:0] uart_rvalue;
+  logic [31:0] bus_rvalue;
+
+  always_comb begin
+    unique case(bus_prev_addr[31:29])
+      3'b000: bus_rvalue = instr_rvalue;
+      3'b001: bus_rvalue = bsmem_rvalue;
+      3'b010: bus_rvalue = uart_rvalue;
+      default: bus_rvalue = 0;
+    endcase 
+  end
 
   always_ff @(posedge clk_i or negedge rstn_i) begin
     if (!rstn_i) begin
@@ -71,8 +81,12 @@ module top #(parameter FREQ = 27000000) (
      .rstn_i(rstn_i),
      .uart_tx_o(uart_tx_loc),
     
-     .write_i(bus_enable && bus_addr == 32'h1234),
-     .val_i(bus_wvalue[7:0])
+     .enable_i(bus_enable && bus_addr[31:29] == 3'b010),
+     .wstrb_i(bus_wstrb),
+     .addr_i(bus_addr),
+     .addr_prev_i(bus_prev_addr),
+     .wvalue_i(bus_wvalue),
+     .rvalue_o(uart_rvalue)
   );
   assign uart_tx_o = rstn_i ? uart_tx_loc : uart_rx_i;
 endmodule
