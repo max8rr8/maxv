@@ -1,0 +1,3 @@
+-I../../../obj_dir
+-I/usr/share/verilator/include/
+-I/usr/share/verilator/include/vltstd

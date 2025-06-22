@@ -6,9 +6,10 @@ PROG_CONF ?=
 B ?= build
 B_CONF := $(B)/conf/
 CODE_OUT := $(B)/code_$(PROG).out
-SRC := src/top.sv src/led.sv src/uart.sv src/bsmem.sv
-SRC += src/cpu/cpu.sv src/cpu/alu.sv src/cpu/shifter.sv
-SIM := sim/tb.sv sim/prom.sv sim/sim_uart.sv
+CPU_SRC := src/cpu/cpu.sv src/cpu/alu.sv src/cpu/shifter.sv
+SRC := $(CPU_SRC) src/top.sv src/led.sv src/uart.sv src/bsmem.sv
+SIM_CORE := sim/prom.sv
+SIM := $(SIM_CORE) sim/tb.sv sim/sim_uart.sv
 PROG_GEN := prog/gen_code.py
 
 B_CODE_SV := $(B)/code.sv
@@ -26,6 +27,8 @@ PROG_CONF_F := $(B_CONF)/$(PROG)__$(PROG_CONF).prog.conf
 $(PROG_CONF_F):
 	rm -f $(B_CONF)/*.prog.conf
 	touch $(PROG_CONF_F)
+
+VERILATOR := verilator --trace -Wno-pinmissing
 
 include prog/$(PROG)/Makefile
 
@@ -51,7 +54,7 @@ $(B)/sim_code.sv $(B)/sim_code.hex: $(PROG_GEN) $(CODE_OUT) $(PROG_CONF_F)
 	python3 $(PROG_GEN) $(CODE_OUT) $(B)/sim_code.sv --hex $(B)/sim_code.hex
 
 obj_dir/Vtb: $(SRC) $(SIM) $(B)/sim_code.sv
-	verilator --exe --binary $(SIM) $(SRC) $(B)/sim_code.sv --top-module tb -Wno-pinmissing --trace
+	$(VERILATOR) --exe --binary $(SIM) $(SRC) $(B)/sim_code.sv --top-module tb
 
 trace.vcd sim: obj_dir/Vtb
 	./obj_dir/Vtb

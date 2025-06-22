@@ -29,6 +29,7 @@
   finish_test:;                                                                \
   li a0, 0x20000000;                                                           \
   sw a1, 8(a0);                                                                \
+  sw gp, 12(a0);                                                                \
   lw ra, 4(a0);                                                                \
   jalr x0, ra;
 

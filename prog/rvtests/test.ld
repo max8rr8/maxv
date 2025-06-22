@@ -7,3 +7,5 @@ SECTIONS
   .data : { *(.data) }
   .bss : { *(.bss) }
 }
+
+OUTPUT_FORMAT("binary")

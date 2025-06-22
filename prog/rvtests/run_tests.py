@@ -37,7 +37,7 @@ def send_hex(addr: int):
     v = hex(addr)[2:].zfill(8)
     for c in v:
         ser.write(c.encode("ascii"))
-        time.sleep(0.0001)
+        time.sleep(0.0004)
 
 
 def read_hex():
@@ -85,14 +85,11 @@ def sanity_check():
 
 def load_elf(path: str):
     with open(path, "rb") as f:
-        elf = elftools.elf.elffile.ELFFile(f)
-        for section in elf.iter_sections():
-            if section.name.startswith(".text"):
-                d = section.data()
-                code_raw = []
-                for i in range(0, len(d), 4):
-                    code_raw.append(int.from_bytes(d[i:i+4], "little"))
-                write_arr(0x20000400, code_raw)
+        d = f.read(10**6)
+        code_raw = []
+        for i in range(0, len(d), 4):
+            code_raw.append(int.from_bytes(d[i:i+4], "little"))
+        write_arr(0x20000400, code_raw)
                 
                 
 
