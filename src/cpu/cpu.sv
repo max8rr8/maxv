@@ -13,7 +13,6 @@ module cpu (
   typedef enum { 
     ST_FE,
     FETCH,
-    DECODE,
     EXECUTE,
     WRITEBACK
   } CPU_STATE;
@@ -23,8 +22,6 @@ module cpu (
 
   logic [31:0] reg_pc;
   logic [31:0] code_out;
-
-  logic [31:0] regs [1:31];
 
   logic [31:0] cur_ins;
 
@@ -53,6 +50,21 @@ module cpu (
   logic [31:0] cur_src_a;
   logic [31:0] cur_src_b;
   logic [31:0] cur_res;
+
+  logic regfile_write_en;
+  logic [31:0] regfile_wdata;
+
+  cpu_regfile regfile(
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
+    .raddr1_i(ins_rs1),
+    .raddr2_i(ins_rs2),
+    .waddr_i(ins_rd),
+    .write_en_i(regfile_write_en),
+    .wdata_i(regfile_wdata),
+    .rdata1_o(cur_src_a),
+    .rdata2_o(cur_src_b)
+  );
 
   wire alu_compare_eq_o;
   wire alu_compare_lt_o;
@@ -99,11 +111,6 @@ module cpu (
     if(~rstn_i) begin
       reg_pc <= 0;
       cpu_state <= ST_FE;
-      for(int i = 0; i < 31; i++) begin
-        regs[i] <= 0;
-      end
-      cur_src_a <= 0;
-      cur_src_b <= 0;
       cur_res <= 0;
     end else begin
       case (cpu_state)
@@ -112,13 +119,6 @@ module cpu (
         end
         FETCH: begin 
           cur_ins <= rvalue_i;
-          cpu_state <= DECODE;
-        end
-
-        DECODE: begin
-          cur_src_a <= ins_rs1 == 0 ? 0 : regs[ins_rs1];
-          cur_src_b <= ins_rs2 == 0 ? 0 : regs[ins_rs2];
-          
           cpu_state <= EXECUTE;
           start_exec <= 1;
         end
@@ -146,21 +146,6 @@ module cpu (
           reg_pc <= reg_pc + 4;
           cpu_state <= ST_FE;
 
-          if(ins_will_write && ins_rd != 0) begin
-            regs[ins_rd] <= cur_res;
-          end else if(ins_is_load) begin
-            case (cur_ins[14:12])
-              3'b000: regs[ins_rd] <= {{24{rvalue_i[7]}}, rvalue_i[7:0]}; // lb
-              3'b100: regs[ins_rd] <= {{24{1'b0}}, rvalue_i[7:0]}; // lbu
-
-              3'b001: regs[ins_rd] <= {{16{rvalue_i[15]}}, rvalue_i[15:0]}; // lh
-              3'b101: regs[ins_rd] <= {{16{1'b0}}, rvalue_i[15:0]}; // lhu
-
-              3'b010: regs[ins_rd] <= rvalue_i; // lw
-              default: assert(0);
-            endcase
-          end
-
           if(ins_is_jal) begin
             reg_pc <= reg_pc + ins_j_imm;
           end else if(ins_is_jalr) begin
@@ -173,6 +158,7 @@ module cpu (
     end
   end
 
+  // Memory logic
   always_comb begin
     enable_o = 0;
     addr_o = 0;
@@ -204,6 +190,30 @@ module cpu (
         end
       end
     endcase
+  end
+
+  // Register writeback logic
+  always_comb begin
+    regfile_wdata = 0;
+    regfile_write_en = 0;
+    if(cpu_state == WRITEBACK) begin
+      if(ins_will_write) begin
+        regfile_wdata = cur_res;
+        regfile_write_en = 1;
+      end else if(ins_is_load) begin
+        regfile_write_en = 1;
+        case (cur_ins[14:12])
+          3'b000: regfile_wdata = {{24{rvalue_i[7]}}, rvalue_i[7:0]}; // lb
+          3'b100: regfile_wdata = {{24{1'b0}}, rvalue_i[7:0]}; // lbu
+
+          3'b001: regfile_wdata = {{16{rvalue_i[15]}}, rvalue_i[15:0]}; // lh
+          3'b101: regfile_wdata = {{16{1'b0}}, rvalue_i[15:0]}; // lhu
+
+          3'b010: regfile_wdata = rvalue_i; // lw
+          default: assert(0);
+        endcase
+      end
+    end
   end
 
   assign wvalue_o = cur_src_b;
