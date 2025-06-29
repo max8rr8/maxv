@@ -6,13 +6,6 @@ PROG_CONF ?=
 B ?= build
 B_CONF := $(B)/conf/
 CODE_OUT := $(B)/code_$(PROG).out
-CPU_SRC := src/cpu/cpu.sv src/cpu/alu.sv src/cpu/shifter.sv src/cpu/regfile.sv
-SRC := $(CPU_SRC) src/top.sv src/led.sv src/uart.sv src/bsmem.sv
-SIM_CORE := sim/prom.sv
-SIM := $(SIM_CORE) sim/tb.sv sim/sim_uart.sv
-PROG_GEN := prog/gen_code.py
-
-B_CODE_SV := $(B)/code.sv
 
 $(shell mkdir -p $(B))
 $(shell mkdir -p $(B_CONF))
@@ -29,6 +22,14 @@ $(PROG_CONF_F):
 	touch $(PROG_CONF_F)
 
 VERILATOR := verilator --trace -Wno-pinmissing
+
+include src/cpu/Makefile
+
+SRC := $(CPU_SRC) src/top.sv src/led.sv src/uart.sv src/bsmem.sv
+SIM_CORE := sim/prom.sv
+SIM := $(SIM_CORE) sim/tb.sv sim/sim_uart.sv
+PROG_GEN := prog/gen_code.py
+B_CODE_SV := $(B)/code.sv
 
 include prog/$(PROG)/Makefile
 

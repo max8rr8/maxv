@@ -25,19 +25,28 @@ module cpu (
 
   logic [31:0] cur_ins;
 
-  wire ins_is_lui = cur_ins[6:0] == 7'b0110111;
-  wire ins_is_auipc = cur_ins[6:0] == 7'b0010111;
-  wire ins_is_alui = cur_ins[6:0] == 7'b0010011;
-  wire ins_is_alu = cur_ins[6:0] == 7'b0110011;
-  wire ins_is_shifti = ins_is_alui & cur_ins[13:12] == 2'b01;
-  wire ins_is_shift = ins_is_alu & cur_ins[13:12] == 2'b01;
-  wire ins_is_store = cur_ins[6:0] == 7'b0100011;
-  wire ins_is_load = cur_ins[6:0] == 7'b0000011;
-  wire ins_is_jal = cur_ins[6:0] == 7'b1101111;
-  wire ins_is_jalr = cur_ins[6:0] == 7'b1100111;
-  wire ins_is_branch = cur_ins[6:0] == 7'b1100011;
+  wire mc_will_write;
+  wire [2:0] mc_write_mux;
+  wire mc_alu_use_imm;
+  wire mc_alu_compare_unsigned;
+  wire [1:0] mc_pc_mode;
+  wire mc_is_store;
+  wire mc_is_load;
 
-  wire ins_will_write = ins_is_lui | ins_is_auipc | ins_is_alui | ins_is_alu | ins_is_jal | ins_is_jalr | ins_is_shift;
+  microcode_data microcode_data (
+    .clk_i(clk_i),
+    .rst_i(~rstn_i),
+    .decode_en_i(cpu_state == FETCH),
+    .mc_addr_i({rvalue_i[14:12], rvalue_i[6:2], 2'b00}),
+
+    .mc_will_write_o(mc_will_write),
+    .mc_write_mux_o(mc_write_mux),
+    .mc_alu_use_imm_o(mc_alu_use_imm),
+    .mc_alu_compare_unsigned_o(mc_alu_compare_unsigned),
+    .mc_pc_mode_o(mc_pc_mode),
+    .mc_is_load_o(mc_is_load),
+    .mc_is_store_o(mc_is_store)
+  );
 
   wire [4:0] ins_rd = cur_ins[11:7];
   wire [4:0] ins_rs1 = cur_ins[19:15];
@@ -75,12 +84,12 @@ module cpu (
     .src_b_i(cur_src_b),
     .src_imm(ins_i_imm),
 
-    .use_imm_i(ins_is_alui),
+    .use_imm_i(mc_alu_use_imm),
     .op_i(cur_ins[14:12]),
-    .do_sub_i(ins_is_alu & cur_ins[30]),
+    .do_sub_i(cur_ins[6:0] == 7'b0110011 & cur_ins[30]),
     .res_o(alu_res_o),
 
-    .compare_unsigned_i(ins_is_branch ? cur_ins[13] : cur_ins[12]),
+    .compare_unsigned_i(mc_alu_compare_unsigned),
     .compare_eq_o(alu_compare_eq_o),
     .compare_lt_o(alu_compare_lt_o)
   );
@@ -93,12 +102,12 @@ module cpu (
     .src_a_i(cur_src_a),
     .src_b_i(cur_src_b),
     .src_imm(ins_i_imm),
-    .use_imm_i(ins_is_shifti),
+    .use_imm_i(mc_alu_use_imm),
     
     .right_i(cur_ins[14]),
     .signed_i(cur_ins[30]),
 
-    .start_i(start_exec & (ins_is_shifti | ins_is_shift)),
+    .start_i(start_exec),
     .done_o(shifter_done_o),
     .res_o(shifter_res_o)
   );
@@ -126,19 +135,17 @@ module cpu (
         EXECUTE: begin
           cpu_state <= WRITEBACK;
 
-          if(ins_is_lui) begin
-            cur_res <= { cur_ins[31:12], 12'd0 };
-          end else if(ins_is_auipc) begin
-            cur_res <= reg_pc + { cur_ins[31:12], 12'd0 };
-          end else if(ins_is_shifti | ins_is_shift) begin
-            cur_res <= shifter_res_o;
-            if(shifter_done_o == 1'b0) begin
-              cpu_state <= EXECUTE;
-            end
-          end else if(ins_is_alui | ins_is_alu) begin
-            cur_res <= alu_res_o;
-          end else if(ins_is_jal | ins_is_jalr) begin
-            cur_res <= reg_pc + 4;
+          case(mc_write_mux)
+            3'b000: cur_res <= { cur_ins[31:12], 12'd0 };
+            3'b001: cur_res <= reg_pc + { cur_ins[31:12], 12'd0 };
+            3'b010: cur_res <= alu_res_o;
+            3'b011: cur_res <= shifter_res_o;
+            3'b100: cur_res <= reg_pc + 4;
+
+            default: cur_res <= 0;
+          endcase
+          if(shifter_done_o == 1'b0 & mc_write_mux == 3'b011) begin
+            cpu_state <= EXECUTE;
           end
         end
 
@@ -146,11 +153,11 @@ module cpu (
           reg_pc <= reg_pc + 4;
           cpu_state <= ST_FE;
 
-          if(ins_is_jal) begin
+          if(mc_pc_mode == 2'b10) begin
             reg_pc <= reg_pc + ins_j_imm;
-          end else if(ins_is_jalr) begin
+          end else if(mc_pc_mode == 2'b11) begin
             reg_pc <= cur_src_a + ins_i_imm;
-          end else if(ins_is_branch && should_branch) begin
+          end else if(mc_pc_mode == 2'b01 && should_branch) begin
             reg_pc <= reg_pc + ins_b_imm;
           end
         end
@@ -171,14 +178,14 @@ module cpu (
       end
       
       EXECUTE: begin
-        if(ins_is_load) begin
+        if(mc_is_load) begin
           addr_o = cur_src_a + ins_i_imm;
           enable_o = 1;
         end
       end
 
       WRITEBACK: begin
-        if(ins_is_store) begin
+        if(mc_is_store) begin
           case(cur_ins[14:12])
             3'b000: wstrb_o = 4'b0001;
             3'b001: wstrb_o = 4'b0011;
@@ -197,10 +204,10 @@ module cpu (
     regfile_wdata = 0;
     regfile_write_en = 0;
     if(cpu_state == WRITEBACK) begin
-      if(ins_will_write) begin
+      if(mc_will_write) begin
         regfile_wdata = cur_res;
         regfile_write_en = 1;
-      end else if(ins_is_load) begin
+      end else if(mc_is_load) begin
         regfile_write_en = 1;
         case (cur_ins[14:12])
           3'b000: regfile_wdata = {{24{rvalue_i[7]}}, rvalue_i[7:0]}; // lb

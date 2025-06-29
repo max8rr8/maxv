@@ -1,0 +1,112 @@
+[fields]
+will_write = { default = "0", width = 1 }
+write_mux = { default = "111", width = 3 }
+alu_use_imm = { default = "X", width = 1 }
+alu_compare_unsigned = { default = "X", width = 1 }
+pc_mode = { default = "00", width = 2 }
+is_store = { default = "0", width = 1 }
+is_load = { default = "0", width = 1 }
+
+[lui]
+encoding = "xxx_01101"
+
+[[lui.code]]
+will_write = "1"
+write_mux = "000"
+
+[auipc]
+encoding = "xxx_00101"
+
+[[auipc.code]]
+will_write = "1"
+write_mux = "001"
+
+[alu]
+encoding = "xxx_01100"
+
+[[alu.code]]
+will_write = "1"
+write_mux = "010"
+alu_use_imm = "0"
+alu_compare_unsigned = "0"
+
+[sltu]
+encoding = "011_01100"
+
+[[sltu.code]]
+alu_compare_unsigned = "1"
+
+[alui]
+encoding = "xxx_00100"
+
+[[alui.code]]
+will_write = "1"
+write_mux = "010"
+alu_use_imm = "1"
+alu_compare_unsigned = "0"
+
+[sltiu]
+encoding = "011_00100"
+
+[[sltiu.code]]
+alu_compare_unsigned = "1"
+
+[shift]
+encoding = "x01_01100"
+
+[[shift.code]]
+will_write = "1"
+write_mux = "011"
+alu_use_imm = "0"
+
+[shifti]
+encoding = "x01_00100"
+
+[[shifti.code]]
+will_write = "1"
+write_mux = "011"
+alu_use_imm = "1"
+
+[jalr]
+encoding = "xxx_11001"
+
+[[jalr.code]]
+will_write = "1"
+write_mux = "100"
+pc_mode = "11"
+
+
+[jal]
+encoding = "xxx_11011"
+
+[[jal.code]]
+will_write = "1"
+write_mux = "100"
+pc_mode = "10"
+
+
+[branch]
+encoding = "xxx_11000"
+
+[[branch.code]]
+pc_mode = "01"
+alu_compare_unsigned = "0"
+
+
+[branch_u]
+encoding = "11x_11000"
+
+[[branch_u.code]]
+alu_compare_unsigned = "1"
+
+[load]
+encoding = "xxx_00000"
+
+[[load.code]]
+is_load = "1"
+
+[store]
+encoding = "xxx_01000"
+
+[[store.code]]
+is_store = "1"
