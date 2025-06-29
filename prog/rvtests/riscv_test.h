@@ -26,7 +26,8 @@
   j finish_test;
 
 #define RVTEST_CODE_END                                                        \
-  finish_test:;                                                                \
+  li a1, 0x3;                                                                  \
+finish_test:;                                                                \
   li a0, 0x20000000;                                                           \
   sw a1, 8(a0);                                                                \
   sw gp, 12(a0);                                                                \
