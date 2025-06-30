@@ -13,8 +13,7 @@ module cpu (
   typedef enum { 
     ST_FE,
     FETCH,
-    EXECUTE,
-    WRITEBACK
+    EXECUTE
   } CPU_STATE;
 
   CPU_STATE cpu_state;
@@ -133,26 +132,9 @@ module cpu (
         end
 
         EXECUTE: begin
-          cpu_state <= WRITEBACK;
-
-          case(mc_write_mux)
-            3'b000: cur_res <= { cur_ins[31:12], 12'd0 };
-            3'b001: cur_res <= reg_pc + { cur_ins[31:12], 12'd0 };
-            3'b010: cur_res <= alu_res_o;
-            3'b011: cur_res <= shifter_res_o;
-            3'b100: cur_res <= reg_pc + 4;
-
-            default: cur_res <= 0;
-          endcase
-          if(shifter_done_o == 1'b0 & mc_write_mux == 3'b011) begin
-            cpu_state <= EXECUTE;
-          end
-        end
-
-        WRITEBACK: begin
-          reg_pc <= reg_pc + 4;
           cpu_state <= ST_FE;
 
+          reg_pc <= reg_pc + 4;
           if(mc_pc_mode == 2'b10) begin
             reg_pc <= reg_pc + ins_j_imm;
           end else if(mc_pc_mode == 2'b11) begin
@@ -160,6 +142,16 @@ module cpu (
           end else if(mc_pc_mode == 2'b01 && should_branch) begin
             reg_pc <= reg_pc + ins_b_imm;
           end
+
+          if(shifter_done_o == 1'b0 & mc_write_mux == 3'b011) begin
+            cpu_state <= EXECUTE;
+            reg_pc <= reg_pc;
+          end
+
+          if(start_exec & mc_is_load) begin
+            cpu_state <= EXECUTE;
+            reg_pc <= reg_pc;
+          end;
         end
       endcase
     end
@@ -180,11 +172,9 @@ module cpu (
       EXECUTE: begin
         if(mc_is_load) begin
           addr_o = cur_src_a + ins_i_imm;
-          enable_o = 1;
+          enable_o = start_exec;
         end
-      end
 
-      WRITEBACK: begin
         if(mc_is_store) begin
           case(cur_ins[14:12])
             3'b000: wstrb_o = 4'b0001;
@@ -203,9 +193,18 @@ module cpu (
   always_comb begin
     regfile_wdata = 0;
     regfile_write_en = 0;
-    if(cpu_state == WRITEBACK) begin
+    if(cpu_state == EXECUTE) begin
       if(mc_will_write) begin
-        regfile_wdata = cur_res;
+        case(mc_write_mux)
+          3'b000: regfile_wdata = { cur_ins[31:12], 12'd0 };
+          3'b001: regfile_wdata = reg_pc + { cur_ins[31:12], 12'd0 };
+          3'b010: regfile_wdata = alu_res_o;
+          3'b011: regfile_wdata = shifter_res_o;
+          3'b100: regfile_wdata = reg_pc + 4;
+
+          default: regfile_wdata = 0;
+        endcase
+
         regfile_write_en = 1;
       end else if(mc_is_load) begin
         regfile_write_en = 1;
