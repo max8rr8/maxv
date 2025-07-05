@@ -104,6 +104,8 @@ encoding = "xxx_00000"
 
 [[load.code]]
 is_load = "1"
+will_write = "1"
+write_mux = "101"
 
 [store]
 encoding = "xxx_01000"

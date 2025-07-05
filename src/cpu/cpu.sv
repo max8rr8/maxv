@@ -158,6 +158,8 @@ module cpu (
   end
 
   // Memory logic
+  logic [31:0] memory_out;
+
   always_comb begin
     enable_o = 0;
     addr_o = 0;
@@ -187,39 +189,32 @@ module cpu (
         end
       end
     endcase
+
+    case (cur_ins[14:12])
+      3'b000: memory_out = {{24{rvalue_i[7]}}, rvalue_i[7:0]}; // lb
+      3'b100: memory_out = {{24{1'b0}}, rvalue_i[7:0]}; // lbu
+
+      3'b001: memory_out = {{16{rvalue_i[15]}}, rvalue_i[15:0]}; // lh
+      3'b101: memory_out = {{16{1'b0}}, rvalue_i[15:0]}; // lhu
+
+      default: memory_out = rvalue_i; // lw
+    endcase
   end
 
   // Register writeback logic
   always_comb begin
-    regfile_wdata = 0;
-    regfile_write_en = 0;
-    if(cpu_state == EXECUTE) begin
-      if(mc_will_write) begin
-        case(mc_write_mux)
-          3'b000: regfile_wdata = { cur_ins[31:12], 12'd0 };
-          3'b001: regfile_wdata = reg_pc + { cur_ins[31:12], 12'd0 };
-          3'b010: regfile_wdata = alu_res_o;
-          3'b011: regfile_wdata = shifter_res_o;
-          3'b100: regfile_wdata = reg_pc + 4;
+    case(mc_write_mux)
+      3'b000: regfile_wdata = { cur_ins[31:12], 12'd0 };
+      3'b001: regfile_wdata = reg_pc + { cur_ins[31:12], 12'd0 };
+      3'b010: regfile_wdata = alu_res_o;
+      3'b011: regfile_wdata = shifter_res_o;
+      3'b100: regfile_wdata = reg_pc + 4;
+      3'b101: regfile_wdata = memory_out;
 
-          default: regfile_wdata = 0;
-        endcase
+      default: regfile_wdata = 0;
+    endcase
 
-        regfile_write_en = 1;
-      end else if(mc_is_load) begin
-        regfile_write_en = 1;
-        case (cur_ins[14:12])
-          3'b000: regfile_wdata = {{24{rvalue_i[7]}}, rvalue_i[7:0]}; // lb
-          3'b100: regfile_wdata = {{24{1'b0}}, rvalue_i[7:0]}; // lbu
-
-          3'b001: regfile_wdata = {{16{rvalue_i[15]}}, rvalue_i[15:0]}; // lh
-          3'b101: regfile_wdata = {{16{1'b0}}, rvalue_i[15:0]}; // lhu
-
-          3'b010: regfile_wdata = rvalue_i; // lw
-          default: assert(0);
-        endcase
-      end
-    end
+    regfile_write_en = cpu_state == EXECUTE && mc_will_write;
   end
 
   assign wvalue_o = cur_src_b;
