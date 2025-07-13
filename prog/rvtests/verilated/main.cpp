@@ -135,9 +135,9 @@ int main(int argc, char **argv) {
     }
 
     if (test_passed) {
-      std::cout << std::setw(10) << test_name << GREEN_CODE << " PASS" << RESET_CODE << std::endl;
+      std::cout << std::setw(18) << test_name << GREEN_CODE << " PASS" << RESET_CODE << std::endl;
     } else {
-      std::cout << std::setw(10) << test_name << RED_CODE << " FAIL " << test_failn << RESET_CODE << std::endl;
+      std::cout << std::setw(18) << test_name << RED_CODE << " FAIL " << test_failn << RESET_CODE << std::endl;
       fail_count++;
     }
   }

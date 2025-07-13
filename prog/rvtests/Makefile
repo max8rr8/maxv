@@ -1,11 +1,12 @@
 .SECONDEXPANSION:
 
-RVTESTS ?= lui auipc jal jalr \
-					 beq bne blt bge bltu bgeu \
-					 addi slti sltiu xori ori andi \
-					 slli srli srai \
-					 add sub sll slt sltu xor or and \
-					 srl sra
+RVTESTS ?= rv32ui/lui rv32ui/auipc rv32ui/jal rv32ui/jalr \
+					 rv32ui/beq rv32ui/bne rv32ui/blt rv32ui/bge rv32ui/bltu rv32ui/bgeu \
+					 rv32ui/addi rv32ui/slti rv32ui/sltiu rv32ui/xori rv32ui/ori rv32ui/andi \
+					 rv32ui/slli rv32ui/srli rv32ui/srai \
+					 rv32ui/add rv32ui/sub rv32ui/sll rv32ui/slt rv32ui/sltu rv32ui/xor rv32ui/or rv32ui/and \
+					 rv32ui/srl rv32ui/sra \
+					 rv32um/mul rv32um/mulh rv32um/mulhsu rv32um/mulhu
 
 PSRC := prog/rvtests
 RVTEST_SRC := $(PSRC)/dep/riscv-tests/
@@ -16,12 +17,12 @@ $(B)/code_$(PROG).out: $(PROG_SRCF) $(PROG_CONF_F)
 		$(PROG_SRCF) -I$(PSRC) -I$(RVTEST_SRC)/isa/macros/scalar -T $(PSRC)/harness.ld
 
 RVTEST_B := $(B)/rvtests/
-$(shell mkdir -p $(RVTEST_B))
+$(shell mkdir -p $(RVTEST_B)/rv32ui $(RVTEST_B)/rv32um)
 
 RVTEST_B_TESTS :=  $(addprefix $(RVTEST_B),$(RVTESTS))
 
-$(RVTEST_B_TESTS): $(RVTEST_B)%: $(RVTEST_SRC)/isa/rv32ui/%.S $(PSRC)/riscv_test.h $(PSRC)/test.ld
-	clang -Oz -target riscv32 -fno-PIC -march=rv32i -nostdlib -o $@ \
+$(RVTEST_B_TESTS): $(RVTEST_B)%: $(RVTEST_SRC)/isa/%.S $(PSRC)/riscv_test.h $(PSRC)/test.ld
+	clang -Oz -target riscv32 -fno-PIC -march=rv32im -nostdlib -o $@ \
 		$< -I$(PSRC) -I$(RVTEST_SRC)/isa/macros/scalar -T $(PSRC)/test.ld
 
 run_rvtests_fpga: $(RVTEST_B_TESTS) load
