@@ -31,12 +31,25 @@ module cpu (
   wire [1:0] mc_pc_mode;
   wire mc_is_store;
   wire mc_is_load;
+  wire mc_mul_mux;
+  wire [1:0] mc_mul_extend;
+
+  wire mc_remap_mul = rvalue_i[6:2] == 5'b01100 && rvalue_i[26:25] == 2'b01;
+  logic [4:0] mc_ins_opcode;
+  
+  always_comb begin
+    if(mc_remap_mul) begin
+      mc_ins_opcode = 5'b11101; // Remap multiplication to OP-VE opcode
+    end else begin
+      mc_ins_opcode = rvalue_i[6:2];
+    end
+  end
 
   microcode_data microcode_data (
     .clk_i(clk_i),
     .rst_i(~rstn_i),
     .decode_en_i(cpu_state == FETCH),
-    .mc_addr_i({rvalue_i[14:12], rvalue_i[6:2], 2'b00}),
+    .mc_addr_i({rvalue_i[14:12], mc_ins_opcode, 2'b00}),
 
     .mc_will_write_o(mc_will_write),
     .mc_write_mux_o(mc_write_mux),
@@ -44,7 +57,9 @@ module cpu (
     .mc_alu_compare_unsigned_o(mc_alu_compare_unsigned),
     .mc_pc_mode_o(mc_pc_mode),
     .mc_is_load_o(mc_is_load),
-    .mc_is_store_o(mc_is_store)
+    .mc_is_store_o(mc_is_store),
+    .mc_mul_mux_o(mc_mul_mux),
+    .mc_mul_extend_o(mc_mul_extend)
   );
 
   wire [4:0] ins_rd = cur_ins[11:7];
@@ -111,6 +126,30 @@ module cpu (
     .res_o(shifter_res_o)
   );
 
+  wire [71:0] mult_res_o;
+  
+  wire mult_a_extend = cur_src_a[31] & mc_mul_extend[0];
+  wire mult_b_extend = cur_src_b[31] & mc_mul_extend[1];
+	MULT36X36 #(
+    .AREG(1'b0),
+    .BREG(1'b0),
+    .OUT0_REG(1'b0),
+    .OUT1_REG(1'b0),
+    .PIPE_REG(1'b1),
+    .ASIGN_REG(1'b0),
+    .BSIGN_REG(1'b0),
+    .MULT_RESET_MODE("SYNC")
+  ) mul_0(
+    .A({{4{mult_a_extend}}, cur_src_a}),
+    .B({{4{mult_b_extend}}, cur_src_b}),
+    .ASIGN(mult_a_extend),
+    .BSIGN(mult_b_extend),
+    .CE(1'b1),
+    .CLK(clk_i),
+    .RESET(~rstn_i),
+    .DOUT(mult_res_o)
+	);
+
   wire should_branch = cur_ins[12] ^ (cur_ins[14] ? alu_compare_lt_o : alu_compare_eq_o);
 
   always_ff @(posedge clk_i) begin
@@ -148,7 +187,7 @@ module cpu (
             reg_pc <= reg_pc;
           end
 
-          if(start_exec & mc_is_load) begin
+          if((start_exec & mc_is_load) || (start_exec & mc_write_mux == 3'b110)) begin
             cpu_state <= EXECUTE;
             reg_pc <= reg_pc;
           end;
@@ -210,6 +249,7 @@ module cpu (
       3'b011: regfile_wdata = shifter_res_o;
       3'b100: regfile_wdata = reg_pc + 4;
       3'b101: regfile_wdata = memory_out;
+      3'b110: regfile_wdata = mc_mul_mux ? mult_res_o[63:32] : mult_res_o[31:0];
 
       default: regfile_wdata = 0;
     endcase
