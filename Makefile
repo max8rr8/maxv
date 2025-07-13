@@ -26,7 +26,7 @@ VERILATOR := verilator --trace -Wno-pinmissing
 include src/cpu/Makefile
 
 SRC := $(CPU_SRC) src/top.sv src/led.sv src/uart.sv src/bsmem.sv
-SIM_CORE := sim/prom.sv
+SIM_CORE := sim/prom.sv sim/mult.sv
 SIM := $(SIM_CORE) sim/tb.sv sim/sim_uart.sv
 PROG_GEN := prog/gen_code.py
 B_CODE_SV := $(B)/code.sv
