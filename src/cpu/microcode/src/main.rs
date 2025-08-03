@@ -65,7 +65,7 @@ fn write_prom(fields: &Vec<Field>, sv_out: &mut dyn fmt::Write) -> Result<(), fm
     writeln!(sv_out, "\tpROM #(")?;
     writeln!(sv_out, "\t\t.BIT_WIDTH({}),", 16)?;
 
-    for prom_init_i in 0..0x3f {
+    for prom_init_i in 0..0x40 {
         let mut strvec = String::with_capacity(256);
         for loc_i in 0..16 {
             for v in &vecs {
@@ -131,12 +131,17 @@ fn main() {
                 .unwrap_or(false)
         })
         .map(|(name, cfg)| {
-            (name, InstructionCfg::deserialize(cfg.clone()).expect("Failed to deserialize instruction"))
+            (
+                name,
+                InstructionCfg::deserialize(cfg.clone())
+                    .expect("Failed to deserialize instruction"),
+            )
         })
         .collect();
 
     instrs.sort_by_key(|x| {
-        -(x.1.encoding
+        -(x.1
+            .encoding
             .chars()
             .filter(|x| *x == 'X' || *x == 'x')
             .count() as i32)
@@ -163,7 +168,6 @@ fn main() {
                 }
             });
         }
-        // dbg!(instr_cfg);
     }
     // dbg!(instrs.collect::<Vec<_>>());
 
