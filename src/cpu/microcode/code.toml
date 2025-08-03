@@ -1,6 +1,6 @@
 [fields]
 will_write = { default = "0", width = 1 }
-write_mux = { default = "111", width = 3 }
+write_mux = { default = "000", width = 3 }
 alu_use_imm = { default = "X", width = 1 }
 alu_compare_unsigned = { default = "X", width = 1 }
 pc_mode = { default = "00", width = 2 }
@@ -8,6 +8,7 @@ is_store = { default = "0", width = 1 }
 is_load = { default = "0", width = 1 }
 mul_mux = { default = "X", width = 1 }
 mul_extend = { default = "XX", width = 2 }
+div_mux = { default = "X", width = 1 }
 
 [lui]
 encoding = "xxx_01101"
@@ -150,4 +151,18 @@ write_mux = "110"
 mul_mux = "1"
 mul_extend = "00"
 
+[divu]
+encoding = "101_11101" # Remapped opcode from mul to OP-VE
 
+[[divu.code]]
+will_write = "1"
+write_mux = "111"
+div_mux = "1"
+
+[remu]
+encoding = "111_11101" # Remapped opcode from mul to OP-VE
+
+[[remu.code]]
+will_write = "1"
+write_mux = "111"
+div_mux = "0"

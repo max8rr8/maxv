@@ -33,6 +33,7 @@ module cpu (
   wire mc_is_load;
   wire mc_mul_mux;
   wire [1:0] mc_mul_extend;
+  wire mc_div_mux;
 
   wire mc_remap_mul = rvalue_i[6:2] == 5'b01100 && rvalue_i[26:25] == 2'b01;
   logic [4:0] mc_ins_opcode;
@@ -59,7 +60,8 @@ module cpu (
     .mc_is_load_o(mc_is_load),
     .mc_is_store_o(mc_is_store),
     .mc_mul_mux_o(mc_mul_mux),
-    .mc_mul_extend_o(mc_mul_extend)
+    .mc_mul_extend_o(mc_mul_extend),
+    .mc_div_mux_o(mc_div_mux)
   );
 
   wire [4:0] ins_rd = cur_ins[11:7];
@@ -150,6 +152,22 @@ module cpu (
     .DOUT(mult_res_o)
 	);
 
+
+  wire [31:0] divider_res_o;
+  wire divider_done_o;
+
+  cpu_divider divider (
+    .clk_i(clk_i),
+    .src_a_i(cur_src_a),
+    .src_b_i(cur_src_b),
+
+    .div_mux(mc_div_mux),
+
+    .start_i(start_exec),
+    .done_o(divider_done_o),
+    .res_o(divider_res_o)
+  );
+
   wire should_branch = cur_ins[12] ^ (cur_ins[14] ? alu_compare_lt_o : alu_compare_eq_o);
 
   always_ff @(posedge clk_i) begin
@@ -183,6 +201,11 @@ module cpu (
           end
 
           if(shifter_done_o == 1'b0 & mc_write_mux == 3'b011) begin
+            cpu_state <= EXECUTE;
+            reg_pc <= reg_pc;
+          end
+
+          if(divider_done_o == 1'b0 & mc_write_mux == 3'b111) begin
             cpu_state <= EXECUTE;
             reg_pc <= reg_pc;
           end
@@ -250,6 +273,7 @@ module cpu (
       3'b100: regfile_wdata = reg_pc + 4;
       3'b101: regfile_wdata = memory_out;
       3'b110: regfile_wdata = mc_mul_mux ? mult_res_o[63:32] : mult_res_o[31:0];
+      3'b111: regfile_wdata = divider_res_o;
 
       default: regfile_wdata = 0;
     endcase
