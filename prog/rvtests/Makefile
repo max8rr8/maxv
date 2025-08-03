@@ -7,7 +7,7 @@ RVTESTS ?= rv32ui/lui rv32ui/auipc rv32ui/jal rv32ui/jalr \
 					 rv32ui/add rv32ui/sub rv32ui/sll rv32ui/slt rv32ui/sltu rv32ui/xor rv32ui/or rv32ui/and \
 					 rv32ui/srl rv32ui/sra \
 					 rv32um/mul rv32um/mulh rv32um/mulhsu rv32um/mulhu \
-					 rv32um/remu rv32um/divu
+					 rv32um/remu rv32um/divu rv32um/rem rv32um/div
 
 PSRC := prog/rvtests
 RVTEST_SRC := $(PSRC)/dep/riscv-tests/

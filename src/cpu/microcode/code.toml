@@ -8,7 +8,7 @@ is_store = { default = "0", width = 1 }
 is_load = { default = "0", width = 1 }
 mul_mux = { default = "X", width = 1 }
 mul_extend = { default = "XX", width = 2 }
-div_mux = { default = "X", width = 1 }
+div_mux = { default = "XX", width = 2 }
 
 [lui]
 encoding = "xxx_01101"
@@ -157,7 +157,7 @@ encoding = "101_11101" # Remapped opcode from mul to OP-VE
 [[divu.code]]
 will_write = "1"
 write_mux = "111"
-div_mux = "1"
+div_mux = "01"
 
 [remu]
 encoding = "111_11101" # Remapped opcode from mul to OP-VE
@@ -165,4 +165,20 @@ encoding = "111_11101" # Remapped opcode from mul to OP-VE
 [[remu.code]]
 will_write = "1"
 write_mux = "111"
-div_mux = "0"
+div_mux = "00"
+
+[rem]
+encoding = "110_11101" # Remapped opcode from mul to OP-VE
+
+[[rem.code]]
+will_write = "1"
+write_mux = "111"
+div_mux = "10"
+
+[div]
+encoding = "100_11101" # Remapped opcode from mul to OP-VE
+
+[[div.code]]
+will_write = "1"
+write_mux = "111"
+div_mux = "11"

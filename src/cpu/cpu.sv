@@ -33,7 +33,7 @@ module cpu (
   wire mc_is_load;
   wire mc_mul_mux;
   wire [1:0] mc_mul_extend;
-  wire mc_div_mux;
+  wire [1:0] mc_div_mux;
 
   wire mc_remap_mul = rvalue_i[6:2] == 5'b01100 && rvalue_i[26:25] == 2'b01;
   logic [4:0] mc_ins_opcode;
