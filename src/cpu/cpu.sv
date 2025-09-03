@@ -31,8 +31,8 @@ module cpu (
   wire [1:0] mc_pc_mode;
   wire mc_is_store;
   wire mc_is_load;
-  wire mc_mul_mux;
   wire [1:0] mc_mul_extend;
+  wire mc_mul_shifter;
   wire [1:0] mc_div_mux;
 
   wire mc_remap_mul = rvalue_i[6:2] == 5'b01100 && rvalue_i[26:25] == 2'b01;
@@ -59,8 +59,8 @@ module cpu (
     .mc_pc_mode_o(mc_pc_mode),
     .mc_is_load_o(mc_is_load),
     .mc_is_store_o(mc_is_store),
-    .mc_mul_mux_o(mc_mul_mux),
     .mc_mul_extend_o(mc_mul_extend),
+    .mc_mul_shifter_o(mc_mul_shifter),
     .mc_div_mux_o(mc_div_mux)
   );
 
@@ -110,48 +110,24 @@ module cpu (
     .compare_lt_o(alu_compare_lt_o)
   );
 
-  wire [31:0] shifter_res_o;
-  wire shifter_done_o;
-
-  cpu_shifter shifter (
+  cpu_mult mult (
     .clk_i(clk_i),
-    .src_a_i(cur_src_a),
-    .src_b_i(cur_src_b),
-    .src_imm(ins_i_imm),
-    .use_imm_i(mc_alu_use_imm),
-    
-    .right_i(cur_ins[14]),
-    .signed_i(cur_ins[30]),
+    .rstn_i(rstn_i),
 
-    .start_i(start_exec),
-    .done_o(shifter_done_o),
-    .res_o(shifter_res_o)
+    .cur_src_a(cur_src_a),
+    .cur_src_b(cur_src_b),
+    .src_imm(ins_i_imm[4:0]),
+
+    .mc_mul_extend(mc_mul_extend),
+    .mc_mul_shifter(mc_mul_shifter),
+    .mc_alu_use_imm(mc_alu_use_imm),
+    .mult_high(mc_write_mux[0]),
+    .shift_arithmetic(cur_ins[30]),
+
+    .mult_res_o(mult_res_o)
   );
 
   wire [71:0] mult_res_o;
-  
-  wire mult_a_extend = cur_src_a[31] & mc_mul_extend[0];
-  wire mult_b_extend = cur_src_b[31] & mc_mul_extend[1];
-	MULT36X36 #(
-    .AREG(1'b0),
-    .BREG(1'b0),
-    .OUT0_REG(1'b0),
-    .OUT1_REG(1'b0),
-    .PIPE_REG(1'b1),
-    .ASIGN_REG(1'b0),
-    .BSIGN_REG(1'b0),
-    .MULT_RESET_MODE("SYNC")
-  ) mul_0(
-    .A({{4{mult_a_extend}}, cur_src_a}),
-    .B({{4{mult_b_extend}}, cur_src_b}),
-    .ASIGN(mult_a_extend),
-    .BSIGN(mult_b_extend),
-    .CE(1'b1),
-    .CLK(clk_i),
-    .RESET(~rstn_i),
-    .DOUT(mult_res_o)
-	);
-
 
   wire [31:0] divider_res_o;
   wire divider_done_o;
@@ -200,17 +176,12 @@ module cpu (
             reg_pc <= reg_pc + ins_b_imm;
           end
 
-          if(shifter_done_o == 1'b0 & mc_write_mux == 3'b011) begin
+          if(divider_done_o == 1'b0 & mc_write_mux == 3'b011) begin
             cpu_state <= EXECUTE;
             reg_pc <= reg_pc;
           end
 
-          if(divider_done_o == 1'b0 & mc_write_mux == 3'b111) begin
-            cpu_state <= EXECUTE;
-            reg_pc <= reg_pc;
-          end
-
-          if((start_exec & mc_is_load) || (start_exec & mc_write_mux == 3'b110)) begin
+          if((start_exec & mc_is_load) || (start_exec & mc_write_mux[2:1] == 2'b11)) begin
             cpu_state <= EXECUTE;
             reg_pc <= reg_pc;
           end;
@@ -269,11 +240,11 @@ module cpu (
       3'b000: regfile_wdata = { cur_ins[31:12], 12'd0 };
       3'b001: regfile_wdata = reg_pc + { cur_ins[31:12], 12'd0 };
       3'b010: regfile_wdata = alu_res_o;
-      3'b011: regfile_wdata = shifter_res_o;
+      3'b011: regfile_wdata = divider_res_o;
       3'b100: regfile_wdata = reg_pc + 4;
       3'b101: regfile_wdata = memory_out;
-      3'b110: regfile_wdata = mc_mul_mux ? mult_res_o[63:32] : mult_res_o[31:0];
-      3'b111: regfile_wdata = divider_res_o;
+      3'b110: regfile_wdata = mult_res_o[31:0];
+      3'b111: regfile_wdata = mult_res_o[63:32];
 
       default: regfile_wdata = 0;
     endcase

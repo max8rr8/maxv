@@ -6,8 +6,8 @@ alu_compare_unsigned = { default = "X", width = 1 }
 pc_mode = { default = "00", width = 2 }
 is_store = { default = "0", width = 1 }
 is_load = { default = "0", width = 1 }
-mul_mux = { default = "X", width = 1 }
 mul_extend = { default = "XX", width = 2 }
+mul_shifter = { default = "X", width = 1}
 div_mux = { default = "XX", width = 2 }
 
 [lui]
@@ -54,21 +54,41 @@ encoding = "011_00100"
 [[sltiu.code]]
 alu_compare_unsigned = "1"
 
-[shift]
-encoding = "x01_01100"
+[srl]
+encoding = "101_01100"
 
-[[shift.code]]
+[[srl.code]]
 will_write = "1"
-write_mux = "011"
+write_mux = "111"
 alu_use_imm = "0"
+mul_shifter = "1"
 
-[shifti]
-encoding = "x01_00100"
+[sll]
+encoding = "001_01100"
 
-[[shifti.code]]
+[[sll.code]]
 will_write = "1"
-write_mux = "011"
+write_mux = "110"
+alu_use_imm = "0"
+mul_shifter = "1"
+
+[srli]
+encoding = "101_00100"
+
+[[srli.code]]
+will_write = "1"
+write_mux = "111"
 alu_use_imm = "1"
+mul_shifter = "1"
+
+[slli]
+encoding = "001_00100"
+
+[[slli.code]]
+will_write = "1"
+write_mux = "110"
+alu_use_imm = "1"
+mul_shifter = "1"
 
 [jalr]
 encoding = "xxx_11001"
@@ -122,41 +142,41 @@ encoding = "000_11101" # Remapped opcode from OP-VE
 [[mul.code]]
 will_write = "1"
 write_mux = "110"
-mul_mux = "0"
+mul_shifter = "0"
 
 [mulh]
 encoding = "001_11101" # Remapped opcode from OP-VE
 
 [[mulh.code]]
 will_write = "1"
-write_mux = "110"
-mul_mux = "1"
+write_mux = "111"
 mul_extend = "11"
+mul_shifter = "0"
 
 [mulhsu]
 encoding = "010_11101" # Remapped opcode from OP-VE
 
 [[mulhsu.code]]
 will_write = "1"
-write_mux = "110"
-mul_mux = "1"
+write_mux = "111"
 mul_extend = "01"
+mul_shifter = "0"
 
 [mulhu]
 encoding = "011_11101" # Remapped opcode from OP-VE
 
 [[mulhu.code]]
 will_write = "1"
-write_mux = "110"
-mul_mux = "1"
+write_mux = "111"
 mul_extend = "00"
+mul_shifter = "0"
 
 [divu]
 encoding = "101_11101" # Remapped opcode from mul to OP-VE
 
 [[divu.code]]
 will_write = "1"
-write_mux = "111"
+write_mux = "011"
 div_mux = "01"
 
 [remu]
@@ -164,7 +184,7 @@ encoding = "111_11101" # Remapped opcode from mul to OP-VE
 
 [[remu.code]]
 will_write = "1"
-write_mux = "111"
+write_mux = "011"
 div_mux = "00"
 
 [rem]
@@ -172,7 +192,7 @@ encoding = "110_11101" # Remapped opcode from mul to OP-VE
 
 [[rem.code]]
 will_write = "1"
-write_mux = "111"
+write_mux = "011"
 div_mux = "10"
 
 [div]
@@ -180,5 +200,5 @@ encoding = "100_11101" # Remapped opcode from mul to OP-VE
 
 [[div.code]]
 will_write = "1"
-write_mux = "111"
+write_mux = "011"
 div_mux = "11"
