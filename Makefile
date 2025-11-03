@@ -24,10 +24,11 @@ $(PROG_CONF_F):
 VERILATOR := verilator --trace -Wno-pinmissing
 
 include src/cpu/Makefile
+include src/vde/Makefile
 include sim/Makefile
 include fpga/Makefile
 
-SRC := $(CPU_SRC) src/soc.sv src/led.sv src/uart.sv src/bsmem.sv
+SRC := $(CPU_SRC) $(VDE_SRC) src/soc.sv src/led.sv src/uart.sv src/bsmem.sv
 PROG_GEN := prog/gen_code.py
 B_CODE_SV := $(B)/code.sv
 

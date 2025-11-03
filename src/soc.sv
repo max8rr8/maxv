@@ -103,4 +103,20 @@ module soc #(
 
   assign uart_tx_o = rstn_i ? uart_tx_loc : uart_rx_i;
 
+  vde vde (
+      .clk_i (clk_i),
+      .rstn_i(rstn_i),
+
+      .pixel_ready_i(pixel_ready_i),
+      .pixel_valid_o(pixel_valid_o),
+      .pixel_data_o (pixel_data_o),
+      .frame_idx_i  (frame_idx_i),
+
+      .bus_enable_i(bus_enable && bus_addr[31:29] == 3'b100),
+      .bus_wstrb_i(bus_wstrb),
+      .bus_addr_i(bus_addr),
+      .bus_addr_prev_i(bus_prev_addr),
+      .bus_wvalue_i(bus_wvalue),
+      .bus_rvalue_o(vde_rvalue)
+  );
 endmodule
