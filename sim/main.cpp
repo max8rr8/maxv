@@ -51,6 +51,11 @@ void do_reset() {
 int main(int argc, char **argv) {
   int fail_count = 0;
 
+  if (!display_init()) {
+    printf("Failed to init display\n");
+    return EXIT_FAILURE;
+  }
+
   contextp = new VerilatedContext;
   contextp->commandArgs(argc, argv);
   Verilated::traceEverOn(true);

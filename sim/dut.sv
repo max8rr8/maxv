@@ -1,5 +1,23 @@
 `default_nettype none
 
+import "DPI-C" function int display_send_pixel(int pixel);
+import "DPI-C" function int display_get_frame_idx();
+
+module display_interface (
+    input wire clk_i,
+
+    input  logic        pixel_valid_i,
+    output logic        pixel_ready_o,
+    input  logic [23:0] pixel_data_i,
+
+    output logic frame_idx_o
+);
+  always_ff @(posedge clk_i) begin
+    pixel_ready_o <= display_send_pixel({{8{pixel_valid_i}}, pixel_data_i}) [0];
+    frame_idx_o   <= display_get_frame_idx() [0];
+  end
+endmodule
+
 module dut (
     input clk_i,
     input rstn_i
@@ -44,5 +62,15 @@ module dut (
       .clk_i(clk_i),
       .rstn_i(rstn_i),
       .uart_tx_i(uart)
+  );
+ 
+  display_interface display_interface (
+      .clk_i(clk_i),
+
+      .pixel_valid_i(pixel_valid),
+      .pixel_ready_o(pixel_ready),
+      .pixel_data_i (pixel_data),
+
+      .frame_idx_o(frame_idx)
   );
 endmodule
