@@ -55,27 +55,6 @@ module top #(
     .out_valid_o(display_valid),
     .out_ready_i(display_ready)
   );
-// vde vde (
-//     .clk_i (display_clk),
-//     .rstn_i(rstn_i),
-
-//     .pixel_ready_i(pixel_ready),
-//     .pixel_valid_o(pixel_valid),
-//     .pixel_data_o (pixel_data),
-//     .frame_idx_i  (display_clk_frame_toggle),
-
-
-//     .bus_enable_i('0),
-//     .bus_wstrb_i('0),
-//     .bus_addr_i('0),
-//     .bus_addr_prev_i('0),
-//     .bus_wvalue_i('0)
-//     // .bus_rvalue_o(vde_rvalue)
-//   );
-//   assign pixel_ready = display_ready;
-//   assign display_valid = pixel_valid;
-//   assign display_data = {8'b0, pixel_data};
-
 
   dvi_pattern dvi_pattern (
       .clk_i (clk_i),
