@@ -112,7 +112,7 @@ module code (
     .READ_MODE(0),
     .RESET_MODE("SYNC")
   ) prom_inst_lo (
-      .AD({{1'b0, addr_i[10:0], 2'b0}}),
+      .AD({{addr_i[11:0], 2'b0}}),
       .CE(1'b1),
       .CLK(clk_i),
       .DO(instr_o[15:0]),
@@ -126,7 +126,7 @@ module code (
     .READ_MODE(0),
     .RESET_MODE("SYNC")
   ) prom_inst_hi (
-      .AD({{1'b0, addr_i[10:0], 2'b0}}),
+      .AD({{addr_i[11:0], 2'b0}}),
       .CE(1'b1),
       .CLK(clk_i),
       .DO(instr_o[31:16]),
