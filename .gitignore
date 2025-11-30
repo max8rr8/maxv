@@ -4,3 +4,5 @@ trace.vcd
 prog/riscv-tests/dep
 src/cpu/microcode/target
 src/cpu/microcode/Cargo.lock
+.cache
+compile_commands.json
