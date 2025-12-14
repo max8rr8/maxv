@@ -8,12 +8,15 @@ module cpu (
     output logic [3:0] wstrb_o,
     output logic [31:0] addr_o,
     output logic [31:0] wvalue_o,
-    input logic [31:0] rvalue_i
+    input logic [31:0] rvalue_i,
+
+    output logic err_inv_ins_o
 );
   typedef enum { 
     ST_FE,
     FETCH,
-    EXECUTE
+    EXECUTE,
+    HALT
   } CPU_STATE;
 
   CPU_STATE cpu_state;
@@ -34,6 +37,7 @@ module cpu (
   wire [1:0] mc_mul_extend;
   wire mc_mul_shifter;
   wire [1:0] mc_div_mux;
+  wire mc_valid_ins;
 
   wire mc_remap_mul = rvalue_i[6:2] == 5'b01100 && rvalue_i[26:25] == 2'b01;
   logic [4:0] mc_ins_opcode;
@@ -61,7 +65,8 @@ module cpu (
     .mc_is_store_o(mc_is_store),
     .mc_mul_extend_o(mc_mul_extend),
     .mc_mul_shifter_o(mc_mul_shifter),
-    .mc_div_mux_o(mc_div_mux)
+    .mc_div_mux_o(mc_div_mux),
+    .mc_valid_ins_o(mc_valid_ins)
   );
 
   wire [4:0] ins_rd = cur_ins[11:7];
@@ -153,6 +158,7 @@ module cpu (
       reg_pc <= 0;
       cpu_state <= ST_FE;
       cur_res <= 0;
+      err_inv_ins_o <= 0;
     end else begin
       case (cpu_state)
         ST_FE: begin 
@@ -185,7 +191,14 @@ module cpu (
             cpu_state <= EXECUTE;
             reg_pc <= reg_pc;
           end;
+
+          if(~mc_valid_ins) begin
+            err_inv_ins_o <= 1;
+            cpu_state <= HALT;
+          end
         end
+
+        HALT: begin end
       endcase
     end
   end

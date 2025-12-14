@@ -1,4 +1,5 @@
 [fields]
+valid_ins = { default = "0", width = 1 }
 will_write = { default = "0", width = 1 }
 write_mux = { default = "000", width = 3 }
 alu_use_imm = { default = "X", width = 1 }
@@ -14,6 +15,7 @@ div_mux = { default = "XX", width = 2 }
 encoding = "xxx_01101"
 
 [[lui.code]]
+valid_ins = "1"
 will_write = "1"
 write_mux = "000"
 
@@ -21,6 +23,7 @@ write_mux = "000"
 encoding = "xxx_00101"
 
 [[auipc.code]]
+valid_ins = "1"
 will_write = "1"
 write_mux = "001"
 
@@ -28,6 +31,7 @@ write_mux = "001"
 encoding = "xxx_01100"
 
 [[alu.code]]
+valid_ins = "1"
 will_write = "1"
 write_mux = "010"
 alu_use_imm = "0"
@@ -43,6 +47,7 @@ alu_compare_unsigned = "1"
 encoding = "xxx_00100"
 
 [[alui.code]]
+valid_ins = "1"
 will_write = "1"
 write_mux = "010"
 alu_use_imm = "1"
@@ -94,6 +99,7 @@ mul_shifter = "1"
 encoding = "xxx_11001"
 
 [[jalr.code]]
+valid_ins = "1"
 will_write = "1"
 write_mux = "100"
 pc_mode = "11"
@@ -103,6 +109,7 @@ pc_mode = "11"
 encoding = "xxx_11011"
 
 [[jal.code]]
+valid_ins = "1"
 will_write = "1"
 write_mux = "100"
 pc_mode = "10"
@@ -112,6 +119,7 @@ pc_mode = "10"
 encoding = "xxx_11000"
 
 [[branch.code]]
+valid_ins = "1"
 pc_mode = "01"
 alu_compare_unsigned = "0"
 
@@ -120,12 +128,14 @@ alu_compare_unsigned = "0"
 encoding = "11x_11000"
 
 [[branch_u.code]]
+valid_ins = "1"
 alu_compare_unsigned = "1"
 
 [load]
 encoding = "xxx_00000"
 
 [[load.code]]
+valid_ins = "1"
 is_load = "1"
 will_write = "1"
 write_mux = "101"
@@ -134,12 +144,14 @@ write_mux = "101"
 encoding = "xxx_01000"
 
 [[store.code]]
+valid_ins = "1"
 is_store = "1"
 
 [mul]
 encoding = "000_11101" # Remapped opcode from OP-VE
 
 [[mul.code]]
+valid_ins = "1"
 will_write = "1"
 write_mux = "110"
 mul_shifter = "0"
@@ -148,6 +160,7 @@ mul_shifter = "0"
 encoding = "001_11101" # Remapped opcode from OP-VE
 
 [[mulh.code]]
+valid_ins = "1"
 will_write = "1"
 write_mux = "111"
 mul_extend = "11"
@@ -157,6 +170,7 @@ mul_shifter = "0"
 encoding = "010_11101" # Remapped opcode from OP-VE
 
 [[mulhsu.code]]
+valid_ins = "1"
 will_write = "1"
 write_mux = "111"
 mul_extend = "01"
@@ -166,6 +180,7 @@ mul_shifter = "0"
 encoding = "011_11101" # Remapped opcode from OP-VE
 
 [[mulhu.code]]
+valid_ins = "1"
 will_write = "1"
 write_mux = "111"
 mul_extend = "00"
@@ -175,6 +190,7 @@ mul_shifter = "0"
 encoding = "101_11101" # Remapped opcode from mul to OP-VE
 
 [[divu.code]]
+valid_ins = "1"
 will_write = "1"
 write_mux = "011"
 div_mux = "01"
@@ -183,6 +199,7 @@ div_mux = "01"
 encoding = "111_11101" # Remapped opcode from mul to OP-VE
 
 [[remu.code]]
+valid_ins = "1"
 will_write = "1"
 write_mux = "011"
 div_mux = "00"
@@ -191,6 +208,7 @@ div_mux = "00"
 encoding = "110_11101" # Remapped opcode from mul to OP-VE
 
 [[rem.code]]
+valid_ins = "1"
 will_write = "1"
 write_mux = "011"
 div_mux = "10"
@@ -199,6 +217,7 @@ div_mux = "10"
 encoding = "100_11101" # Remapped opcode from mul to OP-VE
 
 [[div.code]]
+valid_ins = "1"
 will_write = "1"
 write_mux = "011"
 div_mux = "11"

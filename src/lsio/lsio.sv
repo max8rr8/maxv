@@ -4,6 +4,8 @@
 `define LSIO_REG_UART_RX 6'h4
 `define LSIO_REG_TIMER_MS 6'h8
 `define LSIO_REG_BTN 6'hc
+`define LSIO_REG_WATCHDOG 6'h10
+`define LSIO_REG_ERR 6'h14
 
 module lsio #(
     parameter FREQ = 27000000
@@ -18,6 +20,9 @@ module lsio #(
     input btn_l_i,
 
     output reset_req_o,
+
+    input [3:0] err_code_i,
+    input err_i,
 
     input  logic        enable_i,
     input  logic [ 3:0] wstrb_i,
@@ -101,6 +106,29 @@ module lsio #(
       .reset_req_o(btn_l_reset_req)
   );
 
+  logic [4:0] err_read;
+  logic err_reset_req;
+
+  lsio_err err (
+    .clk_i(clk_i),
+    .rstn_i(rstn_i),
+    .one_ms_event_i(one_ms_event),
+
+    .new_watchdog_val(wvalue_i[11:0]),
+    .set_watchdog_i(reg_write && reg_addr == `LSIO_REG_WATCHDOG),
+    
+    .err_hw_code_i(err_code_i),
+    .err_hw_i(err_i),
+    .err_sw_code_i(wvalue_i[3:0]),
+    .err_sw_i(reg_write && reg_addr == `LSIO_REG_ERR),
+    
+    
+    .err_read_o(err_read),
+    .err_clear_i(reg_read && prev_reg_addr == `LSIO_REG_ERR),
+
+    .req_reset_o(err_reset_req)
+  );
+
   always_comb begin
     case (prev_reg_addr)
       `LSIO_REG_UART_TX: rvalue_o = {{21{uart_transmit_status[10]}}, uart_transmit_status};
@@ -114,10 +142,13 @@ module lsio #(
         18'b0, btn_l_was_pressed, btn_l_longest_press, 2'b0, btn_r_was_pressed, btn_r_longest_press
       };
 
+      `LSIO_REG_ERR:
+      rvalue_o = {27'b0, err_read};
+
       default: rvalue_o = 32'hdeadbeef;
     endcase
   end
 
-  assign reset_req_o = btn_r_reset_req | btn_l_reset_req;
+  assign reset_req_o = btn_r_reset_req | btn_l_reset_req | err_reset_req;
 
 endmodule
