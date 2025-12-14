@@ -1,6 +1,7 @@
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_events.h>
+#include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_surface.h>
@@ -28,6 +29,9 @@ static int frame_idx = 0;
 
 static int missed_pixels = 0;
 static int sent_pixels = 0;
+
+static int key_left = 0;
+static int key_right = 0;
 
 bool display_init() {
   if (!SDL_Init(SDL_INIT_VIDEO)) {
@@ -76,8 +80,23 @@ bool display_update() {
         if (e.type == SDL_EVENT_QUIT) {
           quit = true;
         }
+        if (e.type == SDL_EVENT_KEY_UP) {
+          if (e.key.key == SDLK_LEFT) {
+            key_left = 0;
+          }
+          if (e.key.key == SDLK_RIGHT) {
+            key_right = 0;
+          }
+        }
+        if (e.type == SDL_EVENT_KEY_DOWN) {
+          if (e.key.key == SDLK_LEFT) {
+            key_left = 1;
+          }
+          if (e.key.key == SDLK_RIGHT) {
+            key_right = 1;
+          }
+        }
       }
-
       if (missed_pixels > 0) {
         std::cerr << "FRAME " << frame_idx << " missed " << missed_pixels
                   << " pixels" << std::endl;
@@ -116,3 +135,8 @@ extern "C" int display_send_pixel(int value) {
 }
 
 extern "C" int display_get_frame_idx() { return frame_idx; }
+
+extern "C" int button_get() {
+  // keys--;
+  return (key_right > 0) | (key_left > 0) << 1;
+}

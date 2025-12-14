@@ -13,7 +13,6 @@ module lsio_btn (
   logic was_pressed;
   logic [4:0] longest_press;
   logic [11:0] current_press;
-  logic [11:0] current_press;
 
   initial begin
     longest_press_o = 0;

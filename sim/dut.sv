@@ -2,6 +2,7 @@
 
 import "DPI-C" function int display_send_pixel(int pixel);
 import "DPI-C" function int display_get_frame_idx();
+import "DPI-C" function int button_get();
 
 module display_interface (
     input wire clk_i,
@@ -18,6 +19,22 @@ module display_interface (
   end
 endmodule
 
+module button_interface (
+    input wire clk_i,
+
+    output logic        btn_r_o,
+    output logic        btn_l_o
+);
+  logic [1:0] btn;
+
+  always_ff @(posedge clk_i) begin
+    btn <= button_get()[1:0];
+  end
+
+  assign btn_r_o = ~btn[0];
+  assign btn_l_o = ~btn[1];
+endmodule
+
 module dut (
     input clk_i,
     input rstn_i
@@ -29,9 +46,10 @@ module dut (
   logic pixel_valid;
   logic [23:0] pixel_data;
   logic frame_idx;
+  logic btn_l;
+  logic btn_r;
 
-
-  localparam FREQ = 115200 * 4;
+  localparam FREQ = 115200 * 64;
 
   logic [5:0] leds;
 
@@ -44,7 +62,8 @@ module dut (
       .rstn_o(rstn_soc),
 
       .led_o(leds),
-      .btn_r_i(frame_idx),
+      .btn_r_i(btn_r),
+      .btn_l_i(btn_l),
 
       .uart_tx_o(uart),
       .uart_rx_i(uart_p),
@@ -75,5 +94,12 @@ module dut (
       .pixel_data_i (pixel_data),
 
       .frame_idx_o(frame_idx)
+  );
+
+  button_interface button_interface (
+    .clk_i(clk_i),
+
+    .btn_l_o(btn_l),
+    .btn_r_o(btn_r)
   );
 endmodule
