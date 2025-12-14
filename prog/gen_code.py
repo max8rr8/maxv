@@ -19,14 +19,27 @@ def fix_order(t):
 
 
 with open(args.source, "rb") as f:
-    elffile = ELFFile(f)
+    # print(f.read(4)[:4])
+    if f.read(4)[:4] == b"\x7fELF":
+        f.seek(0)
+        print("ELF")
+        elffile = ELFFile(f)
 
-    for section in elffile.iter_sections():
-        if section.name.startswith(".text"):
-            code_raw = section.data().hex()
-            code_commands = [
-                fix_order(code_raw[i : i + 8]) for i in range(0, len(code_raw), 8)
-            ]
+        for section in elffile.iter_sections():
+            # print(section)
+            if section.name.startswith(".text"):
+                code_raw = section.data().hex()
+                # print(len(code_raw))
+    else:
+        print("Binary")
+        f.seek(0)
+        data = f.read(-1)
+        code_raw = data.hex()
+
+while len(code_raw) % 8 != 0: code_raw += "0"
+code_commands = [
+    fix_order(code_raw[i : i + 8]) for i in range(0, len(code_raw), 8)
+]
 
 print(f"Total: {len(code_commands)} instruction")
 code_bits = len(code_commands) * 32
