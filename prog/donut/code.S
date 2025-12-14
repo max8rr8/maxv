@@ -10,7 +10,7 @@
 
 _boot:
   li a1, 70
-  li sp, 0x20000200
+  li sp, 0x2000f000
   call main
 
 .data
