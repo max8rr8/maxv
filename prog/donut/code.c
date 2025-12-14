@@ -32,19 +32,12 @@ static const uint8_t sprite_quarter[] = {0, 0x55, 0, 0x55, 0, 0x55, 0, 0x55};
 static const uint8_t sprite_eigth[] = {0, 0x11, 0, 0x44, 0, 0x11, 0, 0x44};
 
 void donut_emit_bg(int x, int y) {
-  print_char(' ');
   int bg_pat = (x & 1) * 2 + (y & 1);
   vde_set_map(y + 4, x, SPRITE_BACK + bg_pat);
 }
 
 void donut_emit_pixel(int N, int x, int y) {
-  print_char(get_n_char(N));
   vde_set_map(y + 4, x, N < 5 ? SPRITE_DONUT + N : SPRITE_DONUT + 5);
-}
-
-void donut_finish_line(int y) {
-  print_char('\r');
-  print_char('\n');
 }
 
 struct color_cfg {
@@ -133,8 +126,8 @@ void gui_row_finish(int row) {
       (void)*ptr;
     } else if (app->crash_mode == 3) {
       volatile uint32_t i = 0;
-      while(1) {
-        asm volatile ("nop" ::: "memory");
+      while (1) {
+        asm volatile("nop" ::: "memory");
       }
     } else if (app->crash_mode == 4) {
       err_trigger(4);
@@ -150,7 +143,7 @@ static const uint8_t sprite_bg1[] = {0xf0, 0xf0, 0xf0, 0xf0,
                                      0xf,  0xf,  0xf,  0xf};
 
 int main() {
-  watchdog_set(2000);  
+  watchdog_set(2000);
   vde_clear_screen(0);
 
   uint32_t last_err = err_read_last();
@@ -164,11 +157,10 @@ int main() {
     vde_set_map(3, 2, (last_err & ERR_IS_SW) ? 'S' : 'H');
     vde_set_hex(3, 17, last_err & ERR_MASK);
 
-    
     while (get_time_ms() < 8000) {
       watchdog_set(1200);
     }
-    
+
     watchdog_set(2000);
     vde_clear_screen(0);
   }
@@ -219,10 +211,6 @@ int main() {
     donut_rotate(&app->donut);
 
     count++;
-    print_string("Frames: ");
-    print_hex(count);
-    print_string("\r\x1b[39A");
-
     gui_update_counters(&app->gui, count, app->donut.ray_steps);
 
     uint8_t sprite_info[8];

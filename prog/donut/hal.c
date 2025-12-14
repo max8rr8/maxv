@@ -1,5 +1,6 @@
 #include "hal.h"
 
+#ifdef ENABLE_UART
 void print_string(const char *str) {
   while (*str != 0) {
     print_char(*str);
@@ -22,10 +23,7 @@ void print_hex(int v) {
   print_char(' ');
   print_char(' ');
 }
-
-volatile static const char strr[] = " .,-~:;!*=#$@";
-
-static char get_n_char(int N) { return strr[N + 1]; }
+#endif
 
 void vde_set_string(uint8_t y, uint8_t x, const char *str) {
   while (*str) {
@@ -58,7 +56,7 @@ void vde_set_dec(uint8_t y, uint8_t x, uint32_t v) {
   }
 }
 
-void vde_write_mono_sprite(uint16_t id, const uint8_t *vals, uint8_t color_zero,
+void vde_write_mono_sprite(uint32_t id, const uint8_t *vals, uint8_t color_zero,
                            uint8_t color_one) {
 
   vde_spritemap[(id << 2) + 0] =
@@ -71,7 +69,7 @@ void vde_write_mono_sprite(uint16_t id, const uint8_t *vals, uint8_t color_zero,
       (0b10000000 << 0) | (color_zero << 8) | (color_one << 16);
 }
 
-void vde_write_color_sprite(uint16_t id, const uint8_t *vals) {
+void vde_write_color_sprite(uint32_t id, const uint8_t *vals) {
   for (int i = 0; i < 4; i++)
     vde_spritemap[(id << 2) + i] =
         ((uint32_t)vals[i * 4 + 0]) | ((uint32_t)vals[i * 4 + 1] << 8) |
@@ -87,7 +85,7 @@ uint32_t vde_read_frame_cnt(struct vde_frame_counter *state) {
   return state->over_adder + cur;
 }
 
-void vde_clear_screen(uint16_t tile) {
+void vde_clear_screen(uint32_t tile) {
   uint64_t cnt = 5376;
   uint32_t v = tile;
   while(cnt--) {

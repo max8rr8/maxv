@@ -83,9 +83,9 @@ void donut_render(struct donut_state *state) {
          pos_x++, vxi14 += xincX, vyi14 -= xincY, vzi14 += xincZ) {
       int t = 512; // (256 * dz) - r2i - r1i;
 
-      fp_t px = (p0x + vxi14 * 6 / 4) >> 6;
-      fp_t py = (p0y + vyi14 * 6 / 4) >> 6;
-      fp_t pz = (p0z + vzi14 * 6 / 4) >> 6;
+      fp_t px = (p0x + vxi14 + (vxi14 >> 1)) >> 6;
+      fp_t py = (p0y + vyi14 + (vyi14 >> 1)) >> 6;
+      fp_t pz = (p0z + vzi14 + (vzi14 >> 1)) >> 6;
 
       for (;;) {
         ray_steps++;
@@ -117,7 +117,6 @@ void donut_render(struct donut_state *state) {
         pz += fpmul(d, vzi14);
       }
     }
-    donut_finish_line(pos_y);
   }
   state->ray_steps = ray_steps;
 }
