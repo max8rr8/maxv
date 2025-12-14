@@ -10,7 +10,6 @@ extern "C" long long code_get(long long addr) {
     while (!code_hex.eof()) {
       uint32_t h;
       code_hex >> std::hex >> h;
-      printf("%x\n", h);
       code.push_back(h);
     }
     while (code.size() < 1024)

@@ -16,7 +16,8 @@ struct app_state {
   struct donut_state donut;
   struct gui_state gui;
 
-  uint64_t color_idx;
+  uint32_t color_idx;
+  uint32_t crash_mode;
 };
 
 struct app_state *const app = (struct app_state *)0x20000000;
@@ -97,6 +98,7 @@ static void redraw_menu() {
   vde_set_map(MENU_Y + 2, MENU_VAL_X, '0' + app->donut.r2_iters);
   vde_set_map(MENU_Y + 3, MENU_VAL_X, '0' + app->donut.speed_A);
   vde_set_map(MENU_Y + 4, MENU_VAL_X, '0' + app->donut.speed_B);
+  vde_set_map(MENU_Y + 5, MENU_VAL_X, " IMLS"[app->crash_mode]);
 }
 
 static inline int next_value(int cur_value, int dir, int min, int max) {
@@ -112,13 +114,32 @@ void gui_row_change(int row, int direction) {
     app->donut.r1_iters = next_value(app->donut.r1_iters, direction, 1, 8);
   } else if (row == 2) {
     app->donut.r2_iters = next_value(app->donut.r2_iters, direction, 1, 8);
-    ;
   } else if (row == 3) {
     app->donut.speed_A = next_value(app->donut.speed_A, direction, 0, 9);
   } else if (row == 4) {
     app->donut.speed_B = next_value(app->donut.speed_B, direction, 0, 9);
+  } else if (row == 5) {
+    app->crash_mode = next_value(app->crash_mode, direction, 0, 4);
   }
   redraw_menu();
+}
+
+void gui_row_finish(int row) {
+  if (row == 5) {
+    if (app->crash_mode == 1) {
+      asm volatile("ecall");
+    } else if (app->crash_mode == 2) {
+      volatile uint32_t *ptr = (volatile uint32_t *)0xfffffff0;
+      (void)*ptr;
+    } else if (app->crash_mode == 3) {
+      volatile uint32_t i = 0;
+      while(1) {
+        asm volatile ("nop" ::: "memory");
+      }
+    } else if (app->crash_mode == 4) {
+      err_trigger(4);
+    }
+  }
 }
 
 const uint8_t colorSprite[] = {100, 100, 101, 101, 100, 100, 101, 101,
@@ -129,12 +150,38 @@ static const uint8_t sprite_bg1[] = {0xf0, 0xf0, 0xf0, 0xf0,
                                      0xf,  0xf,  0xf,  0xf};
 
 int main() {
+  watchdog_set(2000);  
+  vde_clear_screen(0);
+
+  uint32_t last_err = err_read_last();
+
+  if (last_err & ERR_MASK) {
+    vde_set_color(0, 255, 0, 0);
+    vde_set_color(1, 0, 0, 0);
+
+    vde_set_string(2, 2, "Restarted due to ERROR!");
+    vde_set_string(3, 3, "W error code: ");
+    vde_set_map(3, 2, (last_err & ERR_IS_SW) ? 'S' : 'H');
+    vde_set_hex(3, 17, last_err & ERR_MASK);
+
+    
+    while (get_time_ms() < 8000) {
+      watchdog_set(1200);
+    }
+    
+    watchdog_set(2000);
+    vde_clear_screen(0);
+  }
+
+  vde_set_color(0, 0, 0, 0);
+  vde_set_color(1, 0, 0, 0);
 
   struct vde_frame_counter vde_frame_cnt = {};
 
   gui_init(&app->gui);
 
   app->color_idx = 0;
+  app->crash_mode = 0;
   update_color();
 
   vde_write_mono_sprite(SPRITE_DONUT + 0, sprite_eigth, COLOR_FG2, COLOR_FG1);
@@ -152,13 +199,14 @@ int main() {
   redraw_menu();
 
   for (;;) {
+    watchdog_set(1000);
     uint32_t btn = read_button();
     uint32_t right_btn = btn & 0x20;
     uint32_t left_btn = btn & 0x2000;
     if (right_btn || left_btn) {
       vde_set_hex(50, 1, btn);
 
-      if(right_btn) {
+      if (right_btn) {
         gui_handle_key(&app->gui, 1, (btn & 0x1f) > 0x6);
       } else {
         gui_handle_key(&app->gui, -1, (btn & 0x1f00) > 0x600);

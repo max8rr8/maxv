@@ -86,3 +86,12 @@ uint32_t vde_read_frame_cnt(struct vde_frame_counter *state) {
   state->prev_frame = cur;
   return state->over_adder + cur;
 }
+
+void vde_clear_screen(uint16_t tile) {
+  uint64_t cnt = 5376;
+  uint32_t v = tile;
+  while(cnt--) {
+    vde_regmap->map_change = v;
+    v += (1 << 9);
+  }
+}

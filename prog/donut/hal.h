@@ -7,6 +7,8 @@ struct lsio_hw {
   volatile uint32_t uart_rx;
   volatile uint32_t timer_ms;
   volatile uint32_t button;
+  volatile uint32_t watchdog;
+  volatile uint32_t err;
 };
 
 static volatile struct lsio_hw *const lsio_mmio =
@@ -67,3 +69,22 @@ struct vde_frame_counter {
 };
 
 uint32_t vde_read_frame_cnt(struct vde_frame_counter *state);
+
+void vde_clear_screen(uint16_t c);
+
+// ======================= ERR
+
+#define ERR_IS_SW 0x10
+#define ERR_MASK 0xf
+
+static inline uint32_t err_read_last() {  
+  return lsio_mmio->err;
+};
+
+static inline uint32_t err_trigger(uint32_t err) {  
+  lsio_mmio->err = err;
+};
+
+static inline uint32_t watchdog_set(uint32_t new_time) {
+  lsio_mmio->watchdog = new_time;
+}

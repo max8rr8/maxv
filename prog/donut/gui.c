@@ -86,6 +86,7 @@ void gui_handle_key(struct gui_state *state, int key, int is_long) {
     if (state->menu_mode == 0) {
       state->menu_mode = 1;
     } else {
+      gui_row_finish(state->menu_pos);
       state->menu_mode = 0;
     }
   }

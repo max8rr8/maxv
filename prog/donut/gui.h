@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include "hal.h"
 
-#define MENU_ROWS 5
+#define MENU_ROWS 6
 #define MENU_Y 5
 #define MENU_VAL_X 64
 
@@ -24,3 +24,4 @@ void gui_update_menu(struct gui_state *state);
 void gui_handle_key(struct gui_state *state, int key, int is_long);
 
 void gui_row_change(int row, int direction);
+void gui_row_finish(int row);
