@@ -35,13 +35,16 @@ module dut (
 
   logic [5:0] leds;
 
+  logic rstn_soc;
+
   soc #(
       .FREQ(FREQ)
-  ) sco (
+  ) soc (
       .clk_i(clk_i),
-      .rstn_i(rstn_i),
+      .rstn_o(rstn_soc),
 
       .led_o(leds),
+      .btn_r_i(frame_idx),
 
       .uart_tx_o(uart),
       .uart_rx_i(uart_p),
@@ -53,14 +56,14 @@ module dut (
   );
 
   always_ff @(posedge clk_i) begin
-    uart_p <= !rstn_i ? 1 : uart;
+    uart_p <= !rstn_soc ? 1 : uart;
   end
 
   sim_uart #(
       .FREQ(FREQ)
   ) sim_uart (
       .clk_i(clk_i),
-      .rstn_i(rstn_i),
+      .rstn_i(rstn_soc),
       .uart_tx_i(uart)
   );
  

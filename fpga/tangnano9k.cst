@@ -1,5 +1,6 @@
 IO_LOC "clk_i" 52;
-IO_LOC "rstn_i" 4;
+IO_LOC "btn_l_i" 4;
+IO_LOC "btn_r_i" 3;
 
 IO_LOC "led_o[0]" 10;
 IO_LOC "led_o[1]" 11;
@@ -9,7 +10,6 @@ IO_LOC "led_o[4]" 15;
 IO_LOC "led_o[5]" 16;
 IO_LOC "uart_tx_o" 17;
 IO_LOC "uart_rx_i" 18;
-IO_LOC "key" 3;
 
 IO_LOC "tmds_d_p[0]" 71;
 IO_PORT "tmds_d_p[0]" PULL_MODE=NONE DRIVE=8;

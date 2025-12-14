@@ -4,8 +4,12 @@ module top #(
     parameter FREQ = 27000000
 ) (
     input clk_i,
-    input rstn_i,
+
+    input btn_r_i,
+    input btn_l_i,
+
     output reg [5:0] led_o,
+
     output uart_tx_o,
     input uart_rx_i,
 
@@ -26,12 +30,18 @@ module top #(
   logic frame_toggle;
   logic display_clk_frame_toggle;
 
+  logic rstn_soc;
+
   soc #(
       .FREQ(25175000)
   ) soc (
       .clk_i(display_clk),
-      .rstn_i(rstn_i),
+      .rstn_o(rstn_soc),
       .led_o(led_o),
+
+      .btn_r_i(btn_r_i),
+      .btn_l_i(btn_l_i),
+
       .uart_tx_o(uart_tx_o),
       .uart_rx_i(uart_rx_i),
 
@@ -45,7 +55,7 @@ module top #(
   (
     .in_clk_i(display_clk),
     .out_clk_i(display_clk),
-    .rstn_i(rstn_i),
+    .rstn_i(rstn_soc),
 
     .in_data_i({8'b0, pixel_data}),
     .in_valid_i(pixel_valid),
@@ -58,7 +68,7 @@ module top #(
 
   dvi_pattern dvi_pattern (
       .clk_i (clk_i),
-      .rstn_i(rstn_i),
+      .rstn_i(rstn_soc),
 
       .display_data_i (display_data),
       .display_valid_i(display_valid),

@@ -12,7 +12,15 @@ module uart #(parameter FREQ = 27000000) (
     input logic [31:0] addr_i,
     input logic [31:0] addr_prev_i,
     input logic [31:0] wvalue_i,
-    output logic [31:0] rvalue_o
+    output logic [31:0] rvalue_o,
+
+    output logic [10:0] transmit_status_o,
+    input logic [7:0] transmit_data_i,
+    input logic transmit_send_i,
+    
+    output logic [7:0] recieve_data_o,
+    output logic recieve_valid_o,
+    input logic recieve_read_i
 );
     localparam CLK_PER_BIT = FREQ / 115200;
 
@@ -42,10 +50,6 @@ module uart #(parameter FREQ = 27000000) (
               cnt_tx <= cnt_tx + 1;
             end;
 
-            if(enable_i & wstrb_i[0] & addr_i[3:2] == 2'b0) begin
-              out_shift <= {1'b1, wvalue_i[7:0], 2'b01};
-            end
-
             if(cnt_rx == '0) begin
               if (rx_stat == 0) begin
                 if(rx_ff == '0) begin
@@ -61,16 +65,19 @@ module uart #(parameter FREQ = 27000000) (
             end else begin
               cnt_rx <= cnt_rx - 1;
             end
+
+            if(recieve_read_i) 
+              rx_in[8] <= 0;
+
+            if(transmit_send_i)
+              out_shift <= {1'b1, transmit_data_i, 2'b01};
         end;
 
         uart_tx_o <= out_shift[0];
-        if(addr_i[2] == '0) begin
-          rvalue_o <= {{21{out_shift[10]}}, out_shift[10:0]};
-        end else begin
-          rvalue_o <= {{23{rx_in[8]}}, rx_in[8:0]};
-          if(enable_i && rx_in[8]) 
-            rx_in[8] <= 0;
-        end
         rx_ff <= uart_rx_i;
     end
+
+    assign recieve_valid_o = rx_in[8];
+    assign recieve_data_o = rx_in[7:0];
+    assign transmit_status_o = out_shift;
 endmodule

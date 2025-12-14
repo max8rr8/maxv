@@ -4,7 +4,10 @@ module soc #(
     parameter FREQ = 27000000
 ) (
     input clk_i,
-    input rstn_i,
+    output rstn_o,
+
+    input btn_r_i,
+    input btn_l_i,
 
     output reg [5:0] led_o,
 
@@ -38,27 +41,39 @@ module soc #(
     endcase
   end
 
+  logic [4:0] rstn_cnt;
+  logic rstn;
+  logic lsio_reset_req;
+  assign rstn_o = rstn;
 
-  always_ff @(posedge clk_i or negedge rstn_i) begin
-    if (!rstn_i) begin
+  initial begin
+    rstn_cnt = 5'b11111;
+    rstn = 1'b1;
+  end  
+
+  always_ff @(posedge clk_i) begin
+    if (rstn_cnt > 0) begin
+      rstn_cnt <= rstn_cnt - 1;
+      rstn <= 0;
+    end else begin
+      rstn <= 1;
+      if(lsio_reset_req) begin
+        rstn_cnt <= 5'b11111;
+      end
+    end
+  end
+
+  always_ff @(posedge clk_i) begin
+    if (!rstn) begin
       bus_prev_addr <= 0;
     end else begin
       bus_prev_addr <= bus_addr;
     end
   end
 
-  // led led(
-  //   .clk_i(clk_i),
-  //   .rstn_i(rstn_i),
-  //   .led_o(led_o),
-
-  //   .write_i(bus_write),
-  //   .val_i(bus_value[5:0])
-  // );
-
   cpu cpu (
       .clk_i (clk_i),
-      .rstn_i(rstn_i),
+      .rstn_i(rstn),
 
       .enable_o(bus_enable),
       .wstrb_o (bus_wstrb),
@@ -67,10 +82,14 @@ module soc #(
       .rvalue_i(bus_rvalue)
   );
 
-  code code (
-      .clk_i  (clk_i),
-      .addr_i (bus_addr),
-      .instr_o(instr_rvalue)
+  soc_code code (
+      .clk_i(clk_i),
+      .enable_i(bus_enable && bus_addr[31:29] == 3'b000),
+      .wstrb_i(bus_wstrb),
+      .addr_i(bus_addr),
+      .addr_prev_i(bus_prev_addr),
+      .wvalue_i(bus_wvalue),
+      .rvalue_o(instr_rvalue)    
   );
 
   bsmem bsmem (
@@ -85,13 +104,17 @@ module soc #(
 
   logic uart_tx_loc;
 
-  uart #(
+  lsio #(
       .FREQ(FREQ)
-  ) uart (
+  ) lsio (
       .clk_i(clk_i),
-      .rstn_i(rstn_i),
+      .rstn_i(rstn),
+
       .uart_tx_o(uart_tx_loc),
       .uart_rx_i(uart_rx_i),
+      .btn_r_i(btn_r_i),
+      .btn_l_i(btn_l_i),
+      .reset_req_o(lsio_reset_req),
 
       .enable_i(bus_enable && bus_addr[31:29] == 3'b010),
       .wstrb_i(bus_wstrb),
@@ -101,11 +124,11 @@ module soc #(
       .rvalue_o(uart_rvalue)
   );
 
-  assign uart_tx_o = rstn_i ? uart_tx_loc : uart_rx_i;
+  assign uart_tx_o = rstn ? uart_tx_loc : uart_rx_i;
 
   vde vde (
       .clk_i (clk_i),
-      .rstn_i(rstn_i),
+      .rstn_i(rstn),
 
       .pixel_ready_i(pixel_ready_i),
       .pixel_valid_o(pixel_valid_o),

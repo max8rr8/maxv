@@ -1,0 +1,1 @@
+LSIO_SRC := src/lsio/lsio.sv src/lsio/uart.sv src/lsio/timer.sv src/lsio/btn.sv
