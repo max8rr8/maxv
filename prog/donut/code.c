@@ -114,9 +114,9 @@ void gui_row_change(int row, int direction) {
     app->donut.r2_iters = next_value(app->donut.r2_iters, direction, 1, 8);
     ;
   } else if (row == 3) {
-    app->donut.speed_A = next_value(app->donut.speed_A, direction, 0, 7);
+    app->donut.speed_A = next_value(app->donut.speed_A, direction, 0, 9);
   } else if (row == 4) {
-    app->donut.speed_B = next_value(app->donut.speed_B, direction, 0, 7);
+    app->donut.speed_B = next_value(app->donut.speed_B, direction, 0, 9);
   }
   redraw_menu();
 }

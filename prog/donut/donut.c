@@ -123,12 +123,11 @@ void donut_render(struct donut_state *state) {
 }
 
 void donut_rotate(struct donut_state *state) {
-  if (state->speed_A != 0) {
-    R(8 - state->speed_A, state->cos_A, state->sin_A);
+  for (int i = 0; i < state->speed_A; i++) {
+    R(5, state->cos_A, state->sin_A);
   }
-  
-  if (state->speed_B != 0) {
-    R(8 - state->speed_B, state->cos_B, state->sin_B);
+  for (int i = 0; i < state->speed_B; i++) {
+    R(5, state->cos_B, state->sin_B);
   }
 }
 
