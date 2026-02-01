@@ -1,5 +1,9 @@
 # MaxV - A small RISC-V core and SoC for Tang Nano 9K
 
+https://github.com/user-attachments/assets/52190835-152d-4f7a-8a7d-0f06af534305
+
+Recording from HDMI capture card (which destroyed image quality) connected to Tang Nano 9K with SoC and donut program running.
+
 ## SoC Features
 
 - Written for Tang Nano 9K (GW1NR-9) synthesized with [Yosys](https://github.com/YosysHQ/apicula)
