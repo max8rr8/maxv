@@ -221,3 +221,9 @@ valid_ins = "1"
 will_write = "1"
 write_mux = "011"
 div_mux = "11"
+
+[fence] # Fence must be valid
+encoding = "00x_00011"
+
+[[fence.code]]
+valid_ins = "1"
